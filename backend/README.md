@@ -196,8 +196,6 @@ flowchart TD
 
 ---
 
----
-
 ## 5. API Reference Guide
 
 Base URL: `http://localhost:8080/api/v1`
