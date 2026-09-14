@@ -2,7 +2,7 @@ fastapi
 uvicorn[standard]
 pydantic
 python-multipart
-# AI/ML dependencies will be added later
-# paddleocr
-# paddlepaddle
-# spacy
+paddleocr
+paddlepaddle
+opencv-python-headless
+numpy
