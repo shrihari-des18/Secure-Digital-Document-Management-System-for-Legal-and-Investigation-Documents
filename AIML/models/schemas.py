@@ -17,6 +17,8 @@ class DocumentProcessResponse(BaseModel):
     document_id: str
     status: str = Field(default="SUCCESS")
     document_type: str = Field(default="UNKNOWN", description="Classified type of the document (e.g., FIR, SEIZURE_MEMO)")
+    is_tampered: bool = Field(default=False, description="Flag indicating if the image shows signs of digital manipulation")
+    tamper_score: float = Field(default=0.0, description="Error Level Analysis (ELA) score representing manipulation probability")
     extracted_text: str = Field(..., description="Full raw text extracted from the document")
     entities: List[ExtractedEntity] = []
     
