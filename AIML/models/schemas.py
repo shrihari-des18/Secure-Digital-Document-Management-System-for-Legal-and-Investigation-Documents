@@ -16,6 +16,7 @@ class ExtractedEntity(BaseModel):
 class DocumentProcessResponse(BaseModel):
     document_id: str
     status: str = Field(default="SUCCESS")
+    document_type: str = Field(default="UNKNOWN", description="Classified type of the document (e.g., FIR, SEIZURE_MEMO)")
     extracted_text: str = Field(..., description="Full raw text extracted from the document")
     entities: List[ExtractedEntity] = []
     
