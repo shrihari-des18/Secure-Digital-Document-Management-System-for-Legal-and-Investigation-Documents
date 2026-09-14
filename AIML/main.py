@@ -10,6 +10,9 @@ app = FastAPI(
 # Include API routers
 app.include_router(health_router, prefix="/api/v1")
 
+from api.process import router as process_router
+app.include_router(process_router, prefix="/api/v1")
+
 @app.get("/")
 async def root():
     return {"message": "Welcome to the SIH26190 AI/ML Microservice"}
