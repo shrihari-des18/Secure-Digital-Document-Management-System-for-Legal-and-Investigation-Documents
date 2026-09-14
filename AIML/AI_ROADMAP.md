@@ -1,41 +1,116 @@
-# SIH26190: AI/ML Evolution Roadmap (Phase 2)
+# SIH26190 — AI/ML Microservice: What's Built, What's Next
 
-## Current State (Hackathon MVP)
-Our current AI Microservice prioritizes **speed, privacy, and deterministic accuracy** using a hybrid pipeline:
-1. **PaddleOCR** for deep-learning-based structural text extraction and pixel-accurate bounding box generation.
-2. **Regex/Heuristics Engine** for instantaneous, 100% explainable Named Entity Recognition (NER) and Document Classification.
-3. **Error Level Analysis (ELA)** for algorithmic image tamper detection.
+## Current state (as of Sept 2026)
 
-This MVP avoids the "Cold Start" problem where high-quality, privacy-compliant datasets of sensitive Indian police documents (FIRs, Charge Sheets) are unavailable for training public models.
+The microservice is a working FastAPI app running on PaddleOCR v3.7 + Python 3.13.
+All five services below are implemented and wired to the API.
+
+| Service | File | Status |
+|---|---|---|
+| OCR (text + bounding boxes) | `services/ocr_service.py` | ✅ Working |
+| NER / PII regex engine | `services/ner_service.py` | ✅ Working |
+| Document classifier | `services/classifier_service.py` | ✅ Working |
+| Tamper detection (ELA) | `services/tamper_service.py` | ✅ Working |
+| PDF → image conversion | `services/pdf_service.py` | ✅ Working |
+| Perceptual hash dedup | `services/dedup_service.py` | ✅ Working |
+
+Two API endpoints:
+
+| Endpoint | Purpose |
+|---|---|
+| `POST /api/v1/process-document` | Swagger/manual testing — accepts a file upload |
+| `POST /ml/v1/analyze` | Spring backend contract — accepts signed URL + task list |
 
 ---
 
-## Phase 2: Deep Learning Integration Strategy
+## What the NER engine currently catches
 
-As the platform scales and enters production, the AI subsystem will evolve from heuristic rules to a fine-tuned LLM/Transformer architecture. We will execute this transition in 5 deliberate steps:
+- `AADHAAR` — 12-digit format (with or without spaces/dashes)
+- `PHONE_NUMBER` — Indian mobile formats (+91, 10-digit starting 6-9)
+- `BNS_SECTION` — Bharatiya Nyaya Sanhita section references
+- `IPC_SECTION` — Indian Penal Code section references
 
-### Step 1: Privacy-Preserving Data Bootstrapping (The "Snowball" Strategy)
-- **Challenge:** Lack of unredacted, publicly available Indian legal documents.
-- **Solution:** Deploy the current MVP. As investigating officers upload documents into the secure system over the first 6 months, we will use our **current Regex/PII Engine to completely redact and anonymize the data** before it enters a training bucket.
-- **Result:** A massive, proprietary, and 100% privacy-compliant dataset of real legal documents safe for ML training.
+---
 
-### Step 2: Foundation Model Selection
-- We will not use external APIs (like OpenAI GPT-4) to ensure no sensitive police data leaves the state's sovereign servers.
-- We will select a lightweight, open-source Transformer architecture optimized for Indian dialects and legal contexts.
-- **Candidates:** `IndicBERT` (AI4Bharat) or `Custom-LegalBERT`.
+## Near-term improvements (no ML training required)
 
-### Step 3: Fine-Tuning for Sequence Classification (Document Tagging)
-- We will replace the keyword-based `classifier_service` with a Sequence Classification head trained on our bootstrapped dataset.
-- The model will learn the semantic context of legal documents, allowing it to distinguish between nuanced forms (e.g., "Draft FIR" vs. "Final FIR") with >99% accuracy, even if standard keywords are misspelled or missing.
+These are additive — regex or lightweight library additions to `ner_service.py`.
 
-### Step 4: Fine-Tuning for Token Classification (Advanced NER)
-- While our current regex perfectly catches structured PII (Aadhaar, Phone Numbers), it struggles with unstructured data.
-- We will fine-tune the Transformer to perform advanced Token Classification, allowing it to dynamically identify and redact contextual entities such as:
-  - `"Victim Name"`
-  - `"Suspect Name"`
-  - `"Weapon Used"`
-  - `"Witness Addresses"`
+### 1. Expand NER entity coverage
+Add patterns for:
+- `PAN_CARD` — `[A-Z]{5}[0-9]{4}[A-Z]`
+- `PASSPORT` — Indian passport format (`[A-Z][0-9]{7}`)
+- `VEHICLE_REG` — state code + district code + number (e.g. `MH12AB1234`)
+- `DATE` — DD/MM/YYYY and written-out dates (useful for custody timeline extraction)
+- `CASE_NUMBER` — `FIR No.`, `Crime No.`, RC/CC patterns
 
-### Step 5: High-Performance Edge Deployment
-- To maintain the blazing-fast response times of our current FastAPI microservice, the fine-tuned PyTorch models will be exported to **ONNX** or compiled using **NVIDIA TensorRT**.
-- This guarantees the heavy NLP models run efficiently on standardized CPU infrastructure or edge GPUs, minimizing infrastructure costs for the police departments.
+No new dependencies. ETA: 1–2 hours.
+
+### 2. Name extraction (spaCy)
+Add `spacy` (`en_core_web_sm`) for `PERSON` and `ORG` entities — catches names like
+"Victim: Ramesh Kumar" that regex can't handle structurally.
+New dependency: `spacy` (~30 MB model download).
+Update `ner_service.py` to run spaCy on each text block after the regex pass.
+ETA: 2–3 hours.
+
+### 3. ELA threshold calibration
+The current `ela_threshold = 5.5` is a rough heuristic.
+- Collect ~20 known-clean and ~20 known-tampered Indian document images.
+- Plot the score distribution and pick a threshold that minimises false positives.
+- Add a `tamper_confidence` field alongside `is_tampered`.
+ETA: half a day with test images.
+
+### 4. EXIF metadata consistency check
+Augment `tamper_service.py` with a second signal:
+- Use `Pillow` to extract EXIF data.
+- Flag if `Software`, `DateTimeOriginal`, or GPS fields look inconsistent with the claimed device/document type.
+- Return as a separate `metadata_flags` list alongside the ELA score.
+ETA: 2–3 hours.
+
+### 5. Async job pattern
+Heavy OCR on a 20-page PDF blocks the request thread.
+- Add a simple in-process job store (dict + asyncio lock) or use FastAPI `BackgroundTasks`.
+- `/ml/v1/analyze` returns `202 Accepted` + `job_id` immediately.
+- Add `GET /ml/v1/jobs/{job_id}` for the backend to poll.
+- The `callback_url` field in the request is already in the schema — implement the POST-back here.
+ETA: half a day.
+
+---
+
+## Medium-term (post-hackathon, needs data)
+
+### Data bootstrapping (the "snowball")
+The current regex/PII engine redacts Aadhaar, phone, and legal sections from every document
+processed through the system. That redacted data is safe to accumulate as a training corpus.
+Store it in a separate, access-controlled bucket from day one — even if training doesn't happen
+for months, the data collection starts automatically.
+
+### Replace keyword classifier with a transformer
+Once ~500 labelled document examples are collected:
+- Fine-tune `IndicBERT` (AI4Bharat) or `distilbert-base-uncased` for sequence classification.
+- Target labels: FIR, CHARGE_SHEET, SEIZURE_MEMO, FORENSIC_REPORT, COURT_ORDER, UNKNOWN.
+- Replace `classifier_service.py` — the API contract stays identical.
+- Expected accuracy gain: catches documents where keywords are misspelled or missing.
+
+### Replace regex NER with token classification
+Fine-tune the same transformer with a token classification head on the accumulated corpus.
+Adds contextual entities (victim name, suspect name, witness address) that regex cannot catch.
+API contract unchanged — just more entity types returned.
+
+### ONNX export for production
+Once fine-tuned models exist:
+- Export PyTorch → ONNX.
+- Run via `onnxruntime` in the FastAPI service.
+- Removes the PyTorch runtime from the production container (~600 MB saved).
+- Inference latency drops 2–3× on CPU.
+
+---
+
+## What this roadmap is NOT doing
+
+The following are out of scope until there is real labelled data and production infrastructure:
+
+- Training from scratch on raw LLMs
+- NVIDIA TensorRT (requires GPU infra the police departments don't have)
+- Semantic search embeddings (deferred until OpenSearch is deployed by the backend team)
+- Any external API calls for ML (OpenAI, Gemini, etc.) — no sensitive data leaves state servers
