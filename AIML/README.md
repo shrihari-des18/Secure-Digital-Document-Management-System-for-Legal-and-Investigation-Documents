@@ -24,6 +24,14 @@ This is the isolated AI/ML microservice built for **SIH26190: Secure Digital Evi
   - `IPC_SECTION`: Indian Penal Code sections
 - **Correlation:** Associates the regex-matched text with the bounding box inherited from the OCR pipeline, formatting it as `[min_x, min_y, max_x, max_y]`.
 
+### 3. Document Classification (`services/classifier_service.py`)
+- **Engine:** Keyword Frequency & Heuristics
+- **Process:** Analyzes the extracted text to classify the document type (e.g., `FIR`, `SEIZURE_MEMO`, `CHARGE_SHEET`).
+
+### 4. Image Tamper Detection (`services/tamper_service.py`)
+- **Engine:** Error Level Analysis (ELA) using OpenCV
+- **Process:** Identifies digital manipulation by analyzing compression artifacts. Returns an `is_tampered` boolean flag and a `tamper_score`.
+
 ---
 
 ## 📡 API Contract (FastAPI)
@@ -36,6 +44,9 @@ Accepts a `multipart/form-data` file upload and returns the extracted entities a
 {
   "document_id": "uuid-string",
   "status": "SUCCESS",
+  "document_type": "FIR",
+  "is_tampered": false,
+  "tamper_score": 1.25,
   "extracted_text": "Full raw text extracted from the document...",
   "entities": [
     {
@@ -53,12 +64,18 @@ Accepts a `multipart/form-data` file upload and returns the extracted entities a
 }
 ```
 
-### `GET /api/v1/health`
-Standard health check returning `{"status": "ok", "service": "AIML Microservice (SIH26190)"}`.
+---
+
+## 🚀 Quick Start (Automated Scripts)
+
+To instantly start the API without manually setting up Python environments, simply double-click or execute the provided run scripts. They will automatically create the virtual environment, install dependencies, and start the server.
+
+- **Windows:** Double-click or run `run.bat`
+- **Linux/Mac:** Run `./run.sh`
 
 ---
 
-## 🚀 Setup & Execution
+## 🚀 Setup & Execution (Manual)
 
 **1. Initialize Environment**
 ```bash
@@ -72,8 +89,19 @@ pip install -r requirements.txt
 uvicorn main:app --reload --port 8000
 ```
 
-**3. Test Environment**
-Navigate to `http://localhost:8000/docs` to use the built-in Swagger UI for testing file uploads.
+---
+
+## 🐳 Docker Deployment
+
+To deploy this microservice in a containerized environment without installing Python locally:
+
+```bash
+# Build the image
+docker build -t sih26190-aiml .
+
+# Run the container
+docker run -d -p 8000:8000 sih26190-aiml
+```
 
 ---
 
@@ -81,31 +109,10 @@ Navigate to `http://localhost:8000/docs` to use the built-in Swagger UI for test
 
 To ensure the AI/ML service is working perfectly before integrating with the Java backend, you can test it directly:
 
-1. **Start the Server:** Ensure your virtual environment is active and run `uvicorn main:app --reload --port 8000`.
+1. **Start the Server:** Use the run scripts or Docker to start the API.
 2. **Open Swagger UI:** Go to **[http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)** in your browser.
 3. **Select Endpoint:** Click on `POST /api/v1/process-document`.
 4. **Prepare the Test:** Click **"Try it out"**.
 5. **Upload Image:** Click the "Choose File" button next to the `file` field. Select an image (like a fake FIR or a downloaded Aadhaar card sample).
 6. **Execute:** Click the large blue **"Execute"** button.
-7. **Verify Output:** Scroll down to the **"Server response"** section. You should see a `200` status code with a JSON body similar to this:
-```json
-{
-  "document_id": "uuid-string",
-  "status": "SUCCESS",
-  "extracted_text": "...",
-  "entities": [
-    {
-      "entity_type": "AADHAAR",
-      "value": "9876 5432 1098",
-      "confidence": 1.0,
-      "bounding_box": {
-        "min_x": 219.0,
-        "min_y": 319.0,
-        "max_x": 510.0,
-        "max_y": 346.0
-      }
-    }
-  ]
-}
-```
-If you see the `bounding_box` coordinates attached to your PII, the pipeline is fully operational!
+7. **Verify Output:** Scroll down to the **"Server response"** section. You should see a `200` status code with the JSON body showing bounding boxes, document classification, and tamper scores.
