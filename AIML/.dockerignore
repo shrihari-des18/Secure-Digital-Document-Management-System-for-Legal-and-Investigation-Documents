@@ -1,0 +1,23 @@
+# Ignore Virtual Environment
+venv/
+env/
+ENV/
+
+# Ignore Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Ignore OS Files
+.DS_Store
+Thumbs.db
+
+# Ignore environment variables
+.env
+
+# Ignore git folder
+.git/
+.gitignore
+
+# Ignore any local test files that shouldn't be deployed
+test_ocr.py
