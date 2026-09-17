@@ -1,174 +1,181 @@
-# SIH26190 E-Vault — Project Progress & In-Depth Technical Remaining Work
+# SIH26190 E-Vault — Project Progress & Technical Remaining Work Roadmap
 
-This document outlines the current completion status of the **Secure Digital Evidence and Legal Document Management System (E-Vault)**, clearly differentiating between the **Backend Subsystem (Java Spring Boot)** and the **AI/ML Microservice Subsystem (Python FastAPI)**. It provides an **in-depth technical specification of remaining tasks** required for production readiness (excluding frontend development).
-
----
-
-## 1. Executive Summary & Build Status
-
-The project architecture consists of two decoupled server subsystems:
-1. **Backend Subsystem (Java 21 LTS / Spring Boot 4.1.1)**: Core business logic, authentication, access control, case management, cryptographic storage, audit ledger, and statutory BSA 2023 §63 certificate generation.
-2. **AI/ML Microservice Subsystem (Python 3.12 / FastAPI / PaddleOCR)**: Document text extraction, PII entity recognition, bounding box detection, and analysis processing.
-
-- **Automated Test Suite**: **38 / 38 Backend Tests Passing** (`mvn test` build success).
-- **Statutory Compliance**: Full implementation of Bharatiya Sakshya Adhiniyam, 2023 (§63) court certificate generation and hash-chained audit ledgers.
+This document presents a **detailed technical and architectural roadmap** for the **Secure Digital Evidence and Legal Document Management System (E-Vault)**. It clearly differentiates completed capabilities from remaining tasks across the **Backend Subsystem (Java Spring Boot)**, the **AI/ML Microservice Subsystem (Python FastAPI)**, and **DevOps Infrastructure**, focusing on architectural design, operational mechanics, and functional requirements.
 
 ---
 
-## 2. Differentiated Summary of Completed Work
+## 1. Executive Summary & System Overview
 
-### 2.1 Backend Subsystem (Java Spring Boot) — COMPLETED
-- **Auth & Access Control**: Stateless JWT authentication filter (HMAC-SHA256), 7 granular RBAC roles (`INVESTIGATING_OFFICER`, `FORENSIC_ANALYST`, `PROSECUTOR`, `COURT`, `AUDITOR`, `RECORDS_CUSTODIAN`, `SYSTEM_ADMIN`), and ABAC case-ownership checks (`CaseSecurityService`).
-- **Case Docket Management**: Full FIR case lifecycle state machine (`OPEN` → `UNDER_INVESTIGATION` → `CHARGESHEET_FILED` → `IN_COURT` → `CLOSED` → `ARCHIVED`).
-- **Evidence Ingestion & Cryptography**: Streaming dual **SHA-256** and **SHA-512** hash computation at ingestion, in-transit client-hash validation, HMAC digital signing, and physical disk integrity re-verification (`POST /api/v1/evidence/{id}/verify-integrity`).
-- **Append-Only Tamper-Evident Audit Ledger**: Hash-chained transaction logging ($\text{entryHash}_n = \text{SHA-256}(\text{seq}_n \parallel \dots \parallel \text{entryHash}_{n-1})$) and whole-ledger cryptographic audit verification (`GET /api/v1/ledger/verify`).
-- **Chain of Custody**: Chronological timeline tracking for lifecycle events (`INGEST`, `TRANSFER`, `VIEW`, `ANALYZE`, `CERTIFY`, `DISPOSE`) with mandatory statutory transfer justifications.
-- **Statutory BSA 2023 §63 PDF Generator**: OpenPDF auto-generation of official court-admissible certificates formatted per the statutory Schedule (Part A hardware particulars, Part B cryptographic hash snapshots, custody table, legal declaration).
-- **Legal Document Management**: Versioning ($v1, v2, \dots$) with revision-level SHA-256 checksums for FIRs, Search Warrants, Charge Sheets, and Court Orders.
-- **AI Gateway Integration**: Spring Boot `AiGatewayClient` with resilient fallback logic connecting to the Python AI microservice, storing AI outputs non-destructively as linked annotations.
+The E-Vault is designed for legal admissibility and chain-of-custody preservation under the **Bharatiya Sakshya Adhiniyam, 2023 (§63)** (replacing Evidence Act §65B). The system architecture comprises two decoupled server tiers:
 
-### 2.2 AI/ML Microservice Subsystem (Python FastAPI) — COMPLETED
-- **FastAPI Microservice Engine**: Asynchronous HTTP API running Uvicorn server (`AIML/main.py`).
-- **PaddleOCR v3.7+ Integration**: Multi-stage OCR pipeline converting uploaded scanned document images/PDFs into bounding boxes and extracted text lines.
-- **Regex & spaCy NER Engine**: Pattern matching and Named Entity Recognition (NER) for Indian regulatory PII:
-  - **Aadhaar Numbers** (12-digit masked patterns)
-  - **PAN Card Identifiers** (10-character alphanumeric strings)
-  - **Phone Numbers & Email Addresses**
-  - **Bounding Box Coordinate Mapping**: Associating extracted PII spans with spatial image coordinates.
-- **Processing Endpoint**: `POST /api/v1/process-document` returning structured `DocumentProcessResponse` payloads.
+1. **Backend Core Subsystem (Java 21 LTS / Spring Boot 4.1.1)**: Handles authentication, RBAC/ABAC access control, FIR case dockets, evidence intake, cryptographic hash sealing, append-only audit ledgers, custody tracking, and statutory §63 PDF court certificates.
+2. **AI/ML Microservice Subsystem (Python 3.12 / FastAPI / PaddleOCR)**: Handles document text extraction (OCR), PII entity recognition, bounding box detection, and forensic analysis.
+
+- **Current Build Status**: **38 / 38 Automated Backend Tests Passing** (`mvn test` build success).
 
 ---
 
-## 3. In-Depth Technical Specification of Remaining Work (Differentiated)
+## 2. Completed Work Breakdown (Backend vs. AI/ML)
 
 ```
-                            REMAINING TASK ROADMAP
-┌──────────────────────────────────────────┐  ┌──────────────────────────────────────────┐
-│      BACKEND SUBSYSTEM (JAVA/SPRING)     │  │      AI/ML SUBSYSTEM (PYTHON/FASTAPI)   │
-├──────────────────────────────────────────┤  ├──────────────────────────────────────────┤
-│ 1. MinIO/S3 WORM Object Lock Storage     │  │ 1. Image Tamper & ELA Heuristics Engine  │
-│ 2. Vault Transit KMS Envelope Encryption │  │ 2. Perceptual Hashing (pHash) & MinHash  │
-│ 3. RFC 3161 Trusted Timestamping (TSA)   │  │ 3. Auto Multi-Class Legal Doc Classifier │
-│ 4. Open Policy Agent (OPA) ABAC Engine   │  │ 4. Fine-Tuned LayoutLMv3 Indian Legal NER│
-│ 5. OpenSearch Full-Text & Vector Search  │  └────────────────────┬─────────────────────┘
-│ 6. WebSocket Real-time Tamper Alarms     │                       │
-└────────────────────┬─────────────────────┘                       │
-                     │                                             │
-                     └──────────────────────┬──────────────────────┘
-                                            │
-┌───────────────────────────────────────────┴──────────────────────────────────────────┐
-│                 CROSS-SERVICE DEVOPS, SECURITY & HARDENING                           │
-├──────────────────────────────────────────────────────────────────────────────────────┤
-│ • Mutual TLS (mTLS) between Spring Boot & Python FastAPI                             │
-│ • Unified Multi-Container Docker Compose Stack (Postgres, MinIO, Vault, OpenSearch)  │
-│ • Automated CI/CD GitHub Actions with SAST (CodeQL) & Trivy Container Scanning       │
-└──────────────────────────────────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────────────────────────────┐
+│                           COMPLETED SUBSYSTEM MATRIX                              │
+├──────────────────────────┬────────────────────────────────────────────────────────┤
+│ Subsystem                │ Implementation Details & Capabilities                  │
+├──────────────────────────┼────────────────────────────────────────────────────────┤
+│ **Backend (Spring Boot)**│ • Stateless JWT authentication (HMAC-SHA256).          │
+│                          │ • 7 RBAC Roles: `INVESTIGATING_OFFICER`,               │
+│                          │   `FORENSIC_ANALYST`, `PROSECUTOR`, `COURT`,           │
+│                          │   `AUDITOR`, `RECORDS_CUSTODIAN`, `SYSTEM_ADMIN`.      │
+│                          │ • FIR case docket state machine (`OPEN` → `CLOSED`).    │
+│                          │ • Dual SHA-256 / SHA-512 streaming hash sealing.       │
+│                          │ • Physical disk integrity check (`/verify-integrity`).  │
+│                          │ • Append-only, hash-chained ledger ($\text{entryHash}$).│
+│                          │ • Whole-ledger audit verifier (`GET /ledger/verify`).  │
+│                          │ • Chronological Chain of Custody tracking & transfers. │
+│                          │ • OpenPDF BSA 2023 §63 court PDF generator.            │
+│                          │ • Legal document versioning ($v1, v2, \dots$).         │
+│                          │ • Resilient AI Gateway HTTP client with fallback.      │
+├──────────────────────────┼────────────────────────────────────────────────────────┤
+│ **AI/ML (FastAPI)**      │ • Asynchronous FastAPI Uvicorn engine.                 │
+│                          │ • PaddleOCR v3.7+ text & bounding box extraction.      │
+│                          │ • Regex + spaCy NER for Aadhaar, PAN, phone, email.    │
+└──────────────────────────┴────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## 3. In-Depth Remaining Work Roadmap (Conceptual & Architectural)
 
 ---
 
 ### PART A: BACKEND SUBSYSTEM REMAINING WORK (Java Spring Boot)
 
-#### A.1 Hardware WORM (Write-Once-Read-Many) Storage Integration
-- **Objective**: Ensure evidence binaries cannot be modified or deleted on physical disk even by system administrators.
-- **Implementation Plan**:
-  - Replace `LocalStorageService` with an S3-compliant `MinioClient` / `S3Client`.
-  - Configure MinIO / S3 **Object Lock** in `COMPLIANCE` mode with statutory retention periods (7–30 years).
-  - Apply Legal Holds on active cases to block object deletion until court disposal.
+```
+┌───────────────────────────────────────────────────────────────────────────────────┐
+│                        BACKEND SUBSYSTEM MODULE ROADMAP                           │
+├───────────────┬──────────────────────────────────┬────────────────────────────────┤
+│ Module ID     │ Feature Description              │ Primary Architectural Purpose  │
+├───────────────┼──────────────────────────────────┼────────────────────────────────┤
+│ **BE-01**     │ MinIO / S3 WORM Object Storage   │ Hardware-enforced immutability │
+│ **BE-02**     │ Vault KMS Envelope Encryption    │ At-rest data key protection    │
+│ **BE-03**     │ Open Policy Agent (OPA) ABAC PDP │ Dynamic policy authorization   │
+│ **BE-04**     │ OpenSearch Hybrid Search Engine  │ Lexical & vector search        │
+│ **BE-05**     │ WebSocket Real-Time Tamper Alarms│ Instant security broadcasting  │
+└───────────────┴──────────────────────────────────┴────────────────────────────────┘
+```
 
-#### A.2 Key Vault KMS Envelope Encryption
-- **Objective**: Encrypt all evidence binaries at rest using envelope encryption.
-- **Implementation Plan**:
-  - Implement per-file **Data Encryption Key (DEK)** generation (`AES-256-GCM`).
-  - Integrate **HashiCorp Vault Transit Engine** (or AWS KMS) to wrap DEKs with a **Key Encryption Key (KEK)**.
-  - Store wrapped DEKs in `evidence_file` database records; keep plaintext keys strictly in ephemeral memory.
+#### Task BE-01: Hardware WORM (Write-Once-Read-Many) Storage Integration
+- **Operational Need**: Prevents malicious actors or rogue database administrators from modifying or deleting stored evidence files, satisfying strict chain-of-custody immutability rules.
+- **Architectural Design**:
+  - Replace local file storage with an S3-compliant object store (`MinioClient` / `S3Client`).
+  - Configure Object Lock in **COMPLIANCE mode** with a statutory retention period (7–30 years based on crime severity).
+  - Implement Legal Hold capabilities on active case dockets to block file deletion until judicial disposal.
+- **How It Works**: Once an officer ingests evidence, the storage engine enforces hardware-level write-once-read-many locks. Any `PUT`, `POST`, or `DELETE` attempt on the binary object is rejected at the storage API layer.
 
-#### A.3 RFC 3161 Trusted Timestamping (TSA) Server Integration
-- **Objective**: Provide independent 3rd-party cryptographic proof of time for ingestion hashes and §63 certificates.
-- **Implementation Plan**:
-  - Integrate BouncyCastle TSA client (`org.bouncycastle.tsp`).
-  - Request signed Time-Stamp Tokens (TST) from an external/internal RFC 3161 TSA server during evidence sealing.
+#### Task BE-02: Key Vault KMS Envelope Encryption (HashiCorp Vault / Cloud KMS)
+- **Operational Need**: Prevents raw evidence binaries from residing in plaintext on disk storage, securing data even if physical disks are stolen or directly accessed.
+- **Architectural Design**:
+  - Implement an **Envelope Encryption** architecture.
+  - Ephemeral Data Encryption Keys (DEKs) generated per file (`AES-256-GCM`).
+  - Key Encryption Key (KEK) managed in HashiCorp Vault's Transit Engine to wrap and unwrap DEKs.
+- **How It Works**: During upload, a random DEK encrypts the binary stream. The DEK is sent to Vault, wrapped by the master KEK, and stored as ciphertext in PostgreSQL. Decryption requires authenticated Vault authorization, ensuring plaintext keys never persist on disk.
 
-#### A.4 Open Policy Agent (OPA) Dynamic ABAC Engine
-- **Objective**: Upgrade hardcoded security checks to a dynamic Policy Decision Point (PDP).
-- **Implementation Plan**:
-  - Integrate OPA via REST API or embedded Wasm evaluator.
-  - Write fine-grained **Rego policies** evaluating User Role, Clearance Level, Case Assignment, IP Subnet, and Jurisdiction.
+#### Task BE-03: Open Policy Agent (OPA) Dynamic ABAC Policy Engine Integration
+- **Operational Need**: Hardcoded security checks cannot accommodate dynamic organizational rules, clearance levels, shift hours, or location constraints across different police stations and courts.
+- **Architectural Design**:
+  - Integrate Open Policy Agent (OPA) as a centralized Policy Decision Point (PDP).
+  - Define declarative **Rego policies** evaluating fine-grained context attributes.
+- **How It Works**: Before executing any request, Spring Security passes context attributes (`User Role`, `Clearance`, `Case Assignment`, `Client IP Subnet`, `Jurisdiction`) to OPA, which evaluates rules and returns a binary `allow / deny` decision.
 
-#### A.5 OpenSearch Full-Text & Hybrid Vector Search
-- **Objective**: Index case metadata, document revisions, and AI OCR outputs for instant cross-case searching.
-- **Implementation Plan**:
-  - Deploy OpenSearch cluster and Spring Data OpenSearch repositories.
-  - Build indexing listeners for case notes, legal documents, and OCR text.
-  - Implement hybrid search combining **BM25 text queries** and **Dense Vector k-NN similarity search**.
+#### Task BE-04: OpenSearch Hybrid Full-Text & Vector Search Integration
+- **Operational Need**: Investigating officers and prosecutors require instant search across millions of OCR-extracted document pages, case diaries, and FIRs.
+- **Architectural Design**:
+  - Deploy an OpenSearch cluster and establish automated data sync listeners from PostgreSQL.
+  - Implement hybrid search combining **BM25 lexical matching** and **Dense Vector k-NN similarity search**.
+- **How It Works**: Text content from FIRs, legal document versions, and AI OCR outputs is indexed into OpenSearch alongside vector embeddings, enabling both keyword matching and semantic context search.
 
-#### A.6 WebSocket Real-Time Event Dispatcher & Tamper Alarms
-- **Objective**: Push immediate alerts for chain-of-custody transfers and tamper detections.
-- **Implementation Plan**:
-  - Add `spring-boot-starter-websocket` with STOMP broker.
-  - Expose `/topic/security/alarms` to broadcast immediate warnings if whole-ledger verification (`GET /ledger/verify`) flags a compromised hash sequence.
+#### Task BE-05: Real-Time WebSockets & Security Alarm Dispatcher
+- **Operational Need**: Immediate operational alerts are required when custody handoffs occur or when the audit ledger detects a security compromise.
+- **Architectural Design**:
+  - Configure STOMP WebSockets broker in Spring Boot.
+  - Expose real-time topic channels (`/topic/case/{id}` and `/topic/security/alarms`).
+- **How It Works**: If a whole-ledger verification scan detects a broken sequence hash or file bit-rot, an automated alert payload is instantly pushed to active auditor and administrator dashboards.
 
 ---
 
 ### PART B: AI/ML SUBSYSTEM REMAINING WORK (Python FastAPI)
 
-#### B.1 Image Tampering & Manipulation Detection Engine (ELA & EXIF)
-- **Objective**: Provide forensic analysts with automated indicators of image splicing or doctoring.
-- **Implementation Plan**:
-  - **Error Level Analysis (ELA)**: Implement in Python (`OpenCV`/`PIL`) to compute JPEG error scale maps. High-contrast variances highlight edited/spliced image regions.
-  - **EXIF Metadata Anomaly Detector**: Parse EXIF headers to flag editing software signatures (Photoshop, GIMP) or creation timestamp anomalies.
+```
+┌───────────────────────────────────────────────────────────────────────────────────┐
+│                        AI/ML SUBSYSTEM MODULE ROADMAP                             │
+├───────────────┬──────────────────────────────────┬────────────────────────────────┤
+│ Module ID     │ Feature Description              │ Primary Architectural Purpose  │
+├───────────────┼──────────────────────────────────┼────────────────────────────────┤
+│ **ML-01**     │ Image Tamper (ELA & EXIF Anomaly)│ Digital image manipulation check│
+│ **ML-02**     │ Perceptual Hashing (pHash) Media │ Visual media deduplication     │
+│ **ML-03**     │ Multi-Class Legal Doc Classifier │ Auto document category tagging │
+│ **ML-04**     │ Indian Legal Entity NER Pipeline │ Legal PII & section extraction │
+└───────────────┴──────────────────────────────────┴────────────────────────────────┘
+```
 
-#### B.2 Perceptual Hashing & Cross-Case Deduplication
-- **Objective**: Identify identical or modified evidence media across different criminal cases.
-- **Implementation Plan**:
-  - Implement **`pHash` (perceptual hashing)** for images and video keyframes using Python `imagehash`.
-  - Calculate Hamming distance between binary pHash values stored in database.
-  - Implement **MinHash / SimHash** for document text deduplication.
+#### Task ML-01: Image Tampering & Manipulation Detection Engine (ELA & EXIF)
+- **Operational Need**: Digital images (CCTV snapshots, crime scene photos, scanned documents) submitted as evidence may be doctored or spliced using photo editing software.
+- **Architectural Design**:
+  - Implement **Error Level Analysis (ELA)** to measure compression variances across image regions.
+  - Implement **EXIF Metadata Anomaly Detection** to identify editing software signatures (Photoshop, GIMP) and creation date mismatches.
+- **How It Works**: ELA resaves the image at a known compression quality level and analyzes the difference matrix. Spliced or edited regions show significantly higher error levels, providing forensic analysts with visual heatmaps and quantitative tamper probability scores.
 
-#### B.3 Automatic Multi-Class Legal Document Classifier
-- **Objective**: Automatically categorize uploaded document scans into standard legal types.
-- **Implementation Plan**:
-  - Train a lightweight classifier (Scikit-Learn TF-IDF or PyTorch) to auto-tag uploads: `FIR`, `SEIZURE_MEMO`, `BANK_STATEMENT`, `FORENSIC_REPORT`, `CHARGE_SHEET`.
+#### Task ML-02: Perceptual Hashing (`pHash`) & Cross-Case Media Deduplication
+- **Operational Need**: Suspects often distribute identical or slightly altered image/video files across multiple crimes. Cryptographic SHA-256 changes completely if a single pixel changes, whereas perceptual hashing identifies visual similarity.
+- **Architectural Design**:
+  - Implement Discrete Cosine Transform (DCT) **`pHash`** for visual media.
+  - Implement **MinHash / SimHash** for document text similarity.
+- **How It Works**: Calculates a 64-bit visual fingerprint for media files. Performs bitwise Hamming distance calculations to instantly highlight duplicate or visually modified evidence across historical cases.
 
-#### B.4 Fine-Tuned Indian Legal NER Engine
-- **Objective**: Extend NER beyond regex to recognize complex Indian legal entity structures.
-- **Implementation Plan**:
-  - Fine-tune spaCy / HuggingFace `LayoutLMv3` model on Indian court documents.
-  - Extract entities for: **IPC/IT Act Sections**, **FIR Numbers**, **Vehicle Registration Numbers (e.g., DL-01-AB-1234)**, **Bank Account / IFSC Codes**, and **Court Names**.
+#### Task ML-03: Multi-Class Legal Document Auto-Classifier
+- **Operational Need**: Manual document classification during evidence intake is slow and prone to human tagging errors.
+- **Architectural Design**:
+  - Train a multi-class document classification model (TF-IDF + Linear Classifier / PyTorch).
+  - Classify uploads into standard categories: `FIR`, `SEIZURE_MEMO`, `BANK_STATEMENT`, `CHARGE_SHEET`, `FORENSIC_REPORT`.
+- **How It Works**: Text extracted via OCR is analyzed by the classifier, returning predicted document category tags with statistical confidence scores.
+
+#### Task ML-04: Fine-Tuned Indian Legal NER Engine
+- **Operational Need**: Standard NER engines fail on Indian legal terminology, FIR naming conventions, IPC sections, and vehicle registration numbers.
+- **Architectural Design**:
+  - Fine-tune spaCy / HuggingFace LayoutLM model on Indian legal text corpora.
+  - Extract entities for **IPC/IT Act Sections**, **FIR Numbers**, **Vehicle Registration Numbers**, **Bank IFSC Codes**, and **Court Names**.
+- **How It Works**: Specialized pattern matchers and contextual NLP models identify legal entities and map them to spatial image bounding boxes for auto-redaction suggestions.
 
 ---
 
 ### PART C: DEVOPS, SECURITY & CROSS-SERVICE INTEGRATION
 
-#### C.1 Inter-Service Mutual TLS (mTLS) Security
-- **Objective**: Secure communication between Spring Boot backend and Python AI microservice against eavesdropping or spoofing.
-- **Implementation Plan**:
-  - Issue X.509 client/server certificates via internal CA.
-  - Configure mTLS on Spring Boot `WebClient` and FastAPI Uvicorn server.
+#### Task OPS-01: Inter-Service Mutual TLS (mTLS) Security
+- **Operational Need**: Prevents eavesdropping, tampering, or unauthorized microservice calls between the Spring Boot backend and Python FastAPI.
+- **Architectural Design**: Generate private X.509 CA certificates and configure bidirectional client/server TLS verification for all REST requests between services.
 
-#### C.2 Multi-Container Docker Compose Stack
-- **Objective**: Provide single-command orchestration for the entire infrastructure.
-- **Implementation Plan**:
-  - Compose services: PostgreSQL 16, MinIO WORM, HashiCorp Vault, OpenSearch, Spring Boot Backend, Python AIML Microservice.
+#### Task OPS-02: Unified Multi-Container Production Stack (`docker-compose.yml`)
+- **Operational Need**: Simplifies single-command deployment across PostgreSQL, MinIO, Vault, OpenSearch, Spring Boot Backend, and Python AIML microservice.
+- **Architectural Design**: Define service dependencies, environment variables, healthchecks, and persistent volumes in a production-ready Compose specification.
 
-#### C.3 CI/CD & Automated Security Scanning
-- **Objective**: Automated testing and vulnerability scanning on code commit.
-- **Implementation Plan**:
-  - GitHub Actions running JUnit/Pytest, CodeQL SAST scanning, OWASP Dependency Check, and Trivy container scanning.
+#### Task OPS-03: CI/CD & Automated Security Scanning
+- **Operational Need**: Guarantees code security, unit test coverage, and dependency compliance on every code commit.
+- **Architectural Design**: Set up GitHub Actions workflow executing JUnit/Pytest automated tests, CodeQL SAST static analysis, OWASP Dependency Check, and Trivy container vulnerability scanning.
 
 ---
 
-## 4. Differentiated Implementation Task Matrix
+## 4. Architectural Summary & Task Matrix
 
-| Task ID | Subsystem | Module / Feature Scope | Technology Stack | Priority |
+| Module ID | Subsystem | Module Scope | Key Operational Benefit | Priority |
 |---|---|---|---|---|
-| **BE-01** | **Backend** | MinIO / S3 WORM Object Lock Integration | MinIO SDK / Java AWS SDK v2 | **P0 (Critical)** |
-| **BE-02** | **Backend** | Envelope Encryption via Vault Transit Engine | HashiCorp Vault / Spring Vault | **P0 (Critical)** |
-| **BE-03** | **Backend** | Open Policy Agent (OPA) Dynamic ABAC Engine | OPA / Rego Policies | **P1 (High)** |
-| **BE-04** | **Backend** | OpenSearch Hybrid Full-Text & Vector Search | OpenSearch / Java Client | **P2 (Medium)** |
-| **BE-05** | **Backend** | Real-time WebSockets & Tamper Alarm Dispatcher | Spring WebSocket / STOMP | **P2 (Medium)** |
-| **ML-01** | **AI/ML** | Image Tamper Heuristics (ELA & EXIF Anomalies) | OpenCV / PIL / Python | **P1 (High)** |
-| **ML-02** | **AI/ML** | Perceptual Hashing (`pHash`) Media Deduplication | `imagehash` / Python | **P1 (High)** |
-| **ML-03** | **AI/ML** | Multi-Class Legal Document Classifier | Scikit-Learn / PyTorch | **P2 (Medium)** |
-| **ML-04** | **AI/ML** | Fine-Tuned Indian Legal NER Engine | LayoutLMv3 / spaCy | **P1 (High)** |
-| **OPS-01**| **DevOps**  | Inter-Service mTLS & Docker Compose Stack | Docker Compose / TLS X.509 | **P1 (High)** |
+| **BE-01** | **Backend** | MinIO / S3 WORM Storage Integration | Hardware-enforced file immutability | **P0 (Critical)** |
+| **BE-02** | **Backend** | Vault Transit KMS Envelope Encryption | Protection of encrypted data keys at rest | **P0 (Critical)** |
+| **BE-03** | **Backend** | Open Policy Agent (OPA) Dynamic ABAC PDP | Dynamic clearance & context policy enforcement | **P1 (High)** |
+| **BE-04** | **Backend** | OpenSearch Hybrid Lexical & Vector Search | High-speed semantic search across evidence text | **P2 (Medium)** |
+| **BE-05** | **Backend** | Real-Time WebSockets & Security Alarms | Live tamper alerts broadcast to dashboards | **P2 (Medium)** |
+| **ML-01** | **AI/ML** | Image Tampering Detection (ELA & EXIF) | Automated visual evidence manipulation check | **P1 (High)** |
+| **ML-02** | **AI/ML** | Perceptual Hashing (`pHash`) Deduplication | Visual similarity search across cases | **P1 (High)** |
+| **ML-03** | **AI/ML** | Multi-Class Legal Document Classifier | Automated document intake tagging | **P2 (Medium)** |
+| **ML-04** | **AI/ML** | Fine-Tuned Indian Legal NER Engine | Precision Indian legal & PII extraction | **P1 (High)** |
+| **OPS-01**| **DevOps**  | Inter-Service mTLS & Docker Compose Stack | Secure encrypted inter-service channel | **P1 (High)** |
