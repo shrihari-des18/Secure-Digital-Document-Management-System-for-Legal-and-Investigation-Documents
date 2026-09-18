@@ -18,10 +18,12 @@ This is the isolated AI/ML microservice built for **SIH26190: Secure Digital Evi
 - **Engine:** Custom Regex Patterns
 - **Process:** Scans the text extracted by the OCR pipeline to find specific entities.
 - **Supported Entities:**
-  - `AADHAAR`: 12-digit format
-  - `PHONE_NUMBER`: Indian formats
-  - `BNS_SECTION`: Bharatiya Nyaya Sanhita sections
-  - `IPC_SECTION`: Indian Penal Code sections
+  - `AADHAAR` / `PAN_CARD`: Indian Identity formats
+  - `PHONE_NUMBER`: Indian phone formats
+  - `BNS_SECTION` / `IPC_SECTION`: Criminal code sections
+  - `FIR_NUMBER`: Crime registration numbers
+  - `VEHICLE_REG`: Indian vehicle plates
+  - `BANK_IFSC`: Banking codes
 - **Correlation:** Associates the regex-matched text with the bounding box inherited from the OCR pipeline, formatting it as `[min_x, min_y, max_x, max_y]`.
 
 ### 3. Document Classification (`services/classifier_service.py`)
@@ -29,15 +31,19 @@ This is the isolated AI/ML microservice built for **SIH26190: Secure Digital Evi
 - **Process:** Analyzes the extracted text to classify the document type (e.g., `FIR`, `SEIZURE_MEMO`, `CHARGE_SHEET`).
 
 ### 4. Image Tamper Detection (`services/tamper_service.py`)
-- **Engine:** Error Level Analysis (ELA) using OpenCV
-- **Process:** Identifies digital manipulation by analyzing compression artifacts. Returns an `is_tampered` boolean flag and a `tamper_score`.
+- **Engine:** Error Level Analysis (ELA) & EXIF Anomaly Detection (using OpenCV & Pillow)
+- **Process:** Identifies digital manipulation by analyzing compression artifacts and inspecting embedded EXIF tags for Photoshop/GIMP signatures. Returns an `is_tampered` boolean flag, `tamper_score`, and `exif_suspicious` flag.
+
+### 5. Media Deduplication Engine (`services/dedup_service.py`)
+- **Engine:** Discrete Cosine Transform (pHash) & MinHash Equivalents
+- **Process:** Generates a 64-bit visual perceptual hash (`phash`) for images and a structural normalized string hash (`text_hash`) for OCR text. This enables instant cross-case duplicate detection even if images are resized or text has minor OCR errors.
 
 ---
 
 ## 📡 API Contract (FastAPI)
 
 ### `POST /api/v1/process-document`
-Accepts a `multipart/form-data` file upload and returns the extracted entities and text.
+Accepts a `multipart/form-data` file upload and returns the extracted entities, text, and forensic analysis.
 
 **Response Schema (`DocumentProcessResponse`):**
 ```json
@@ -47,6 +53,9 @@ Accepts a `multipart/form-data` file upload and returns the extracted entities a
   "document_type": "FIR",
   "is_tampered": false,
   "tamper_score": 1.25,
+  "exif_suspicious": false,
+  "phash": "a5c7f8a1e64b82d0",
+  "text_hash": "4a2b9f87c9d01f22",
   "extracted_text": "Full raw text extracted from the document...",
   "entities": [
     {
