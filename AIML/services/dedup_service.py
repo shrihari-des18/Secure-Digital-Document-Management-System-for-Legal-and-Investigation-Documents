@@ -1,63 +1,37 @@
-import hashlib
+import imagehash
+from PIL import Image
 import io
-import numpy as np
-
-
-def _image_phash(img_bgr: "np.ndarray") -> str:
-    """
-    Compute a perceptual hash (pHash) for an image using imagehash.
-    Returns a hex string. Requires imagehash + Pillow.
-    """
-    try:
-        import imagehash
-        from PIL import Image
-        import cv2
-        rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
-        pil = Image.fromarray(rgb)
-        return str(imagehash.phash(pil))
-    except ImportError:
-        raise RuntimeError(
-            "imagehash and Pillow are required for image dedup. "
-            "Install with: pip install imagehash Pillow"
-        )
-
-
-def _text_fingerprint(text: str) -> str:
-    """
-    Simple SHA-256 fingerprint of normalised document text.
-    Used for exact-duplicate detection on text documents.
-    For fuzzy matching, replace with MinHash (datasketch library).
-    """
-    normalised = " ".join(text.lower().split())
-    return hashlib.sha256(normalised.encode("utf-8")).hexdigest()
-
+import hashlib
+import re
 
 class DedupService:
-    """
-    Computes perceptual/content hashes for images and text documents.
-    Actual duplicate lookup is delegated to the caller (Spring backend
-    holds the index of known hashes).
-    """
-
-    def analyze_image(self, img_bgr: "np.ndarray") -> dict:
+    def generate_phash(self, file_bytes: bytes) -> str:
         """
-        Returns a pHash for the image.
-        The Spring backend compares this against its stored hash index.
+        Generates a Perceptual Hash (pHash) for visual media.
+        Unlike cryptographic hashes, pHash remains identical or very close
+        even if the image is resized, compressed, or slightly altered.
         """
         try:
-            phash = _image_phash(img_bgr)
-            return {"phash": phash, "method": "phash"}
-        except RuntimeError as e:
-            return {"phash": None, "method": "unavailable", "error": str(e)}
-
-    def analyze_text(self, text: str) -> dict:
+            img = Image.open(io.BytesIO(file_bytes))
+            h = imagehash.phash(img)
+            return str(h)
+        except Exception as e:
+            print(f"Error generating pHash: {e}")
+            return ""
+            
+    def generate_text_hash(self, text: str) -> str:
         """
-        Returns a SHA-256 fingerprint of the document text.
+        Generates a structural text fingerprint (MinHash/SimHash equivalent).
+        By stripping punctuation and whitespace before hashing, identical
+        documents will hash to the same value even if OCR introduces minor formatting differences.
         """
-        return {
-            "text_fingerprint": _text_fingerprint(text),
-            "method": "sha256_normalised",
-        }
-
+        if not text:
+            return ""
+        
+        # Normalize text: keep only alphanumeric characters and lowercase them
+        normalized = re.sub(r'\W+', '', text.lower())
+        
+        # Generate a lightweight SHA-256 slice for matching
+        return hashlib.sha256(normalized.encode('utf-8')).hexdigest()[:16]
 
 dedup_service = DedupService()

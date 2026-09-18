@@ -62,4 +62,36 @@ class TamperService:
             print(f"Error during Tamper Detection: {e}")
             return {"is_tampered": False, "tamper_score": 0.0}
 
+    def check_exif(self, file_bytes: bytes) -> dict:
+        """
+        Inspects EXIF metadata for anomalies, such as signatures from Photoshop or GIMP.
+        """
+        from PIL import Image, ExifTags
+        import io
+        
+        try:
+            img = Image.open(io.BytesIO(file_bytes))
+            exif = img.getexif()
+            if not exif:
+                return {"exif_suspicious": False, "software": None}
+            
+            suspicious_keywords = ["photoshop", "gimp", "lightroom", "adobe", "canva"]
+            is_suspicious = False
+            detected_software = None
+            
+            for k, v in exif.items():
+                tag = ExifTags.TAGS.get(k, k)
+                if tag == 'Software':
+                    software = str(v).lower()
+                    detected_software = software
+                    for kw in suspicious_keywords:
+                        if kw in software:
+                            is_suspicious = True
+                            break
+                            
+            return {"exif_suspicious": is_suspicious, "software": detected_software}
+        except Exception as e:
+            print(f"Error during EXIF check: {e}")
+            return {"exif_suspicious": False, "software": None}
+
 tamper_service = TamperService()
