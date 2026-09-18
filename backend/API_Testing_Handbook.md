@@ -315,3 +315,19 @@ This handbook provides an end-to-end testing workflow for the **Secure Digital E
 - **Description**: Retrieves completed AI analysis record including OCR text, detected PII, auto-tags, perceptual hash (pHash), ML confidence score, and summary.
 - **Headers**: `Authorization: Bearer <YOUR_JWT_TOKEN>`
 - **Request Body**: None
+
+---
+
+## 8. Hybrid Search Engine Subsystem (`/api/v1/search`)
+
+### Step 8.1: Perform Hybrid Full-Text & Semantic Vector Search
+- **Endpoint**: `GET /api/v1/search`
+- **Description**: Searches across case dockets, sealed evidence metadata, AI OCR text extraction, PII, and legal documents. Interfaces with OpenSearch cluster with automated database fallback.
+- **Headers**: `Authorization: Bearer <YOUR_JWT_TOKEN>`
+- **Query Parameters**:
+  - `query` (string, optional): Search keyword (e.g. `cyber`, `dell`, `syslog`, `pan`).
+  - `type` (string, optional): Filter type — `ALL` (default), `CASE`, `EVIDENCE`, `DOCUMENT`.
+  - `page` (int, optional): Page index (default `0`).
+  - `size` (int, optional): Page size (default `10`).
+- **Request Body**: None
+
