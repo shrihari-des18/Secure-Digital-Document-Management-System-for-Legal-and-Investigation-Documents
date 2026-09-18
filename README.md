@@ -103,9 +103,9 @@ Rather than acting as a simple cloud file drive, the E-Vault treats every file a
 
 ---
 
-## 5. Enhanced End-to-End Application Workflow (Frontend $\rightarrow$ Backend $\rightarrow$ AI/ML)
+## 5. End-to-End Application Workflow (5-Tier Zero-Trust Architecture)
 
-The E-Vault operates across a highly coordinated, 5-tier architecture to ensure complete zero-trust security and end-to-end auditability.
+The E-Vault operates across a highly coordinated, **5-Tier Architecture** to guarantee zero-trust security, strict data confidentiality, and unbroken chain-of-custody auditability from field acquisition to judicial trial.
 
 ```mermaid
 sequenceDiagram
@@ -117,23 +117,23 @@ sequenceDiagram
     actor AD as Auditor
 
     rect rgb(240, 248, 255)
-    Note over IO: Stage 1: Frontend Client Pre-Acquisition
-    IO->>Browser: Selects evidence file (e.g. CCTV_dump.mp4)
-    Browser->>Browser: WebCrypto computes SHA-256 client hash
+    Note over IO: Tier 1: Frontend Pre-Acquisition & Sandboxing
+    IO->>Browser: Selects digital evidence file (e.g. CCTV_dump.mp4)
+    Browser->>Browser: WebCrypto computes client SHA-256 checksum
     Browser->>Backend: POST /api/v1/evidence/upload (Binary + X-Client-SHA256 + JWT)
     end
 
     rect rgb(255, 245, 238)
-    Note over Backend: Stage 2: Ingress Security & Stream Verification
-    Backend->>Backend: JwtAuthenticationFilter validates Bearer token
+    Note over Backend: Tier 2: Ingress Security Perimeter & Stream Verification
+    Backend->>Backend: JwtAuthenticationFilter validates Bearer token & claims
     Backend->>Backend: CaseSecurityService evaluates ABAC lead officer assignment
     Backend->>Backend: DigestInputStream calculates server SHA-256 & SHA-512
-    Backend->>Backend: Validates clientSha256 == serverSha256 (Abort if mismatch)
+    Backend->>Backend: Validates clientSha256 == serverSha256 (Abort on mismatch)
     end
 
     rect rgb(245, 255, 250)
-    Note over Backend: Stage 3: Envelope Encryption, WORM Storage & Ledger Commit
-    Backend->>Backend: Generates random AES-256 DEK & 12-byte IV
+    Note over Backend: Tier 3: Cryptographic Storage, Vault KMS & Ledger Commit
+    Backend->>Backend: Generates random single-use AES-256 DEK & 12-byte IV
     Backend->>Vault KMS: Wrap DEK using Master KEK (evault-master-kek)
     Vault KMS-->>Backend: Returns Base64 wrappedDek ciphertext
     Backend->>MinIO WORM: Store encrypted payload (COMPLIANCE Object Lock mode)
@@ -142,20 +142,20 @@ sequenceDiagram
     end
 
     rect rgb(255, 240, 245)
-    Note over FA: Stage 4: AI Analysis & Non-Destructive Annotation
-    IO->>Backend: Transfer custody to Analyst (Dr. Meera) + statutory justification
+    Note over FA: Tier 4: AI/ML Analysis & Non-Destructive Annotation
+    IO->>Backend: Transfer custody to Analyst (Dr. Meera) + statutory reason
     FA->>Backend: POST /api/v1/evidence/{id}/analyze
-    Backend->>AI Service: POST /api/v1/process-document (Image/PDF stream)
+    Backend->>AI Service: POST /api/v1/process-document (Image/PDF payload)
     AI Service->>AI Service: PaddleOCR extracts text + spaCy NER flags Aadhaar/PAN
     AI Service-->>Backend: Return Extracted Text + Bounding Boxes [min_x, min_y, max_x, max_y]
-    Backend->>PostgreSQL: Save AiAnalysis annotation (Original evidence binary 100% UNTOUCHED)
+    Backend->>PostgreSQL: Save AiAnalysis annotation (Original evidence binary UNTOUCHED)
     end
 
     rect rgb(255, 250, 240)
-    Note over PR, AD: Stage 5: Statutory BSA §63 Certification & Independent Audit
+    Note over PR, AD: Tier 5: Statutory BSA §63 Certification & Independent Audit
     PR->>Backend: POST /api/v1/certificates/evidence/{id}
     Backend->>Backend: OpenPDF compiles §63 PDF (Part A hardware, Part B hashes, QR Code)
-    Backend->>PostgreSQL: Evidence status -> CERTIFIED + append CERTIFICATE_ISSUED to Ledger
+    Backend->>PostgreSQL: Update custodyState -> CERTIFIED + append CERTIFICATE_ISSUED to Ledger
     CT->>Browser: Inspects docket in Sandboxed Canvas Viewer (Dynamic Watermark overlay)
     AD->>Backend: GET /api/v1/ledger/verify
     Backend-->>AD: Recalculates Genesis-to-Head Hash Chain -> "LEDGER_INTEGRITY_VERIFIED"
@@ -164,115 +164,99 @@ sequenceDiagram
 
 ---
 
-### Step-by-Step Lifecycle Breakdown
-
-```
-  ┌────────────────────────────────────────────────────────────────────────────────┐
-  │                           E-VAULT 8-STAGE LIFECYCLE                            │
-  └────────────────────────────────────────────────────────────────────────────────┘
-   [Stage 1: Pre-Hashing]      ──► [Stage 2: Perimeter Auth & ABAC]
-             │                                   │
-             ▼                                   ▼
-   [Stage 3: Stream Verification] ──► [Stage 4: Envelope Crypto & WORM]
-             │                                   │
-             ▼                                   ▼
-   [Stage 5: Atomic Ledger Commit]──► [Stage 6: AI OCR & PII Redaction]
-             │                                   │
-             ▼                                   ▼
-   [Stage 7: BSA §63 Certification]─► [Stage 8: Sandboxed Viewer & Audit]
-```
-
-#### Stage 1: Client-Side Pre-Acquisition Hashing (Browser WebCrypto API)
-- **Action**: The Investigating Officer selects a digital evidence file (e.g., CCTV dump, mobile extractions, scanned FIR) in the frontend application.
-- **Execution**: Before any network transmission occurs, the browser executes a streaming `crypto.subtle.digest('SHA-256', buffer)` operation using the native **WebCrypto API**.
-- **Output**: Generates a 64-character hex hash string (`clientSha256`) attached to the `X-Client-SHA256` HTTP header accompanying the multipart file upload request.
-
-#### Stage 2: Gateway Ingress & Dual Security Gates (Spring Security + ABAC)
-- **Action**: Request arrives at the Spring Boot reverse proxy / security perimeter.
-- **Execution**:
-  1. `JwtAuthenticationFilter` validates the HMAC-SHA256 signature and expiration of the Bearer JWT.
-  2. **RBAC Gate**: Method security (`@PreAuthorize("hasRole('INVESTIGATING_OFFICER')")`) verifies the actor possesses upload authorization.
-  3. **ABAC Gate**: `CaseSecurityService` evaluates dynamic attributes:
-     - Verifies the user is the designated lead officer or an assigned team member of the target `caseId`.
-     - Confirms the case state is active (`OPEN` or `UNDER_INVESTIGATION`).
-     - Verifies the request originates from an authorized police station IP subnet.
-
-#### Stage 3: Server-Side Stream Integrity Verification
-- **Action**: Backend stream-reads the raw file bytes in memory.
-- **Execution**:
-  - Bytes pass through a Spring `DigestInputStream` wrapping both **SHA-256** and **SHA-512** message digest instances simultaneously.
-  - The server-calculated SHA-256 checksum is compared against `clientSha256`.
-  - **Integrity Gate**: If `serverSha256 != clientSha256`, the connection is immediately terminated, returning `400 Bad Request: In-flight payload corruption detected`. No database records or storage blobs are created.
-
-#### Stage 4: Envelope Encryption & Hardware WORM Storage
-- **Action**: Sealing the validated binary data at rest.
-- **Execution**:
-  1. **DEK Generation**: Backend generates a random single-use 256-bit AES Data Encryption Key (DEK).
-  2. **Payload Encryption**: Binary stream is encrypted using `AES-256-GCM` with a 12-byte random Initialization Vector (IV).
-  3. **Key Wrapping**: Backend invokes `VaultKmsClientService`, sending DEK to HashiCorp Vault's Transit Engine (`POST /v1/transit/encrypt/evault-master-kek`). Vault wraps the DEK using the master Key Encryption Key (KEK) and returns a Base64 `wrappedDek` string.
-  4. **WORM Object Storage**: `S3WormStorageService` writes the encrypted payload to a MinIO / AWS S3 bucket configured with **Object Lock in COMPLIANCE mode** (e.g. 365-day retention period). Storage hardware physically rejects any `DELETE` or `PUT` calls on the object.
-
-#### Stage 5: Atomic Hash-Chained Audit Ledger Commit
-- **Action**: Committing the transaction block to PostgreSQL.
-- **Execution**:
-  - The transaction executes under a single Spring `@Transactional` database commit gate:
-    1. Creates `EvidenceItem` metadata record (`custodyState = INGESTED`).
-    2. Creates `EvidenceFile` record storing `sha256`, `sha512`, `signature`, `wrappedDek`, and `objectKey`.
-    3. Creates `CustodyEvent` record (`eventType = INGEST`).
-    4. Appends transaction block into `audit_ledger`:
-       $$\text{entryHash}_n = \text{SHA-256}(\text{seq}_n \parallel \text{occurredAt}_n \parallel \text{actorId}_n \parallel \text{action}_n \parallel \text{resourceRef}_n \parallel \text{details}_n \parallel \text{entryHash}_{n-1})$$
-  - Column immutability (`@Column(updatable = false)`) prevents JPA mutations.
-
-#### Stage 6: Asynchronous AI OCR & PII Bounding Box Masking
-- **Action**: Enriching evidentiary documents with AI metadata without altering raw binaries.
-- **Execution**:
-  1. Forensic Analyst clicks **"Analyze Evidence"** (`POST /api/v1/evidence/{id}/analyze`).
-  2. `AiGatewayClient` streams document image bytes to the Python FastAPI microservice (`http://localhost:8000/api/v1/process-document`).
-  3. **PaddleOCR v3.7+** processes image layout, extracting text coordinates and lines.
-  4. **spaCy + Regex NER Engine** scans text for Indian regulatory PII:
-     - 12-digit Aadhaar numbers
-     - 10-character PAN identifiers
-     - Phone numbers & email addresses
-     - BNS / IPC statutory sections
-  5. Python service returns spatial 2D bounding boxes `[min_x, min_y, max_x, max_y]`.
-  6. Backend saves results in `AiAnalysis` entity linked to the evidence item.
-  7. **Immutability Guarantee**: The original evidence binary on WORM storage remains 100% untouched. PII coordinates are used exclusively for on-the-fly redacted canvas rendering for public/defense disclosures.
-
-#### Stage 7: Statutory BSA 2023 §63 PDF Court Certificate Generation
-- **Action**: Issuing statutory certificate for courtroom trial submission.
-- **Execution**:
-  1. Prosecutor or Officer requests certificate issuance (`POST /api/v1/certificates/evidence/{evidenceId}`).
-  2. `CertificateService` collects case particulars, hardware device parameters, seizure date, SHA-256/512 checksums, HMAC signature seal, and complete custody history.
-  3. **OpenPDF Engine** auto-generates official PDF formatted strictly per Section 63 Schedule of Bharatiya Sakshya Adhiniyam, 2023:
-     - Ministry of Home Affairs / Police emblem & Certificate ID (`CERT-BSA63-XXXX`).
-     - **Part A**: Device make, model, serial number, seizure timestamp, extraction software.
-     - **Part B**: Monospace SHA-256 & SHA-512 hashes and HMAC seal.
-     - **Custody Table**: Full chronological timeline of custody handoffs.
-     - **Statutory Declaration §63(4)**: Legal declaration asserting system integrity and lawful custody.
-     - **Verifiable QR Code**: Links directly to the system's ledger verification endpoint.
-  4. Certificate saves to WORM storage, evidence `custodyState` updates to `CERTIFIED`, and `CERTIFICATE_ISSUED` block appends to audit ledger.
-
-#### Stage 8: Sandboxed Canvas Delivery, Dynamic Watermarking & Whole-Ledger Audit
-- **Action**: Judicial review and independent cryptographic verification.
-- **Execution**:
-  1. **Sandboxed Viewer**: Judge or Magistrate views document on frontend. Pages render onto an HTML5 Canvas via PDF.js. Direct PDF downloads, text selection, and right-click menus are disabled.
-  2. **Dynamic Forensic Watermark**: Semi-transparent diagonal watermark (Viewer Badge Number, Station Code, IP Address, Timestamp) is drawn across canvas pixels. Smartphone photos of the screen instantly identify the viewer.
-  3. **Whole-Ledger Cryptographic Verification**: Independent Auditor executes `GET /api/v1/ledger/verify`. The system recalculates SHA-256 block hashes sequentially from genesis block ($n=1$) to head ($n=N$).
-     - If database is intact, returns **`LEDGER_INTEGRITY_VERIFIED`** seal.
-     - If a rogue SQL admin modified any historical record, the algorithm pinpoints the exact sequence number (`brokenSeq`) and alerts security dashboards via WebSockets.
+### Tier-by-Tier Operational Specification
 
 ---
 
-### Detailed Subsystem Responsibilities Matrix
+### 🌐 Tier 1: Frontend Client Pre-Acquisition & Sandboxed Viewing Layer
 
-| Subsystem Layer | Core Responsibilities & Technical Mechanisms |
+| Attribute | Specification |
 |---|---|
-| **Frontend Layer (React/Next.js)** | • WebCrypto SHA-256 pre-acquisition hashing.<br>• Sandboxed HTML5 Canvas rendering via PDF.js.<br>• Dynamic forensic watermarking (Badge, IP, Timestamp).<br>• Interactive chain-of-custody visualizer.<br>• Role-aware UI hiding unauthorized actions. |
-| **Security & Gateway Layer** | • JWT authentication filter (HMAC-SHA256).<br>• Spring Security RBAC method security (`@PreAuthorize`).<br>• ABAC case assignment & status evaluator (`CaseSecurityService`).<br>• Threat rate limiting & IP subnet scoping. |
-| **Backend Core Engine (Java 21)** | • Streaming dual SHA-256 / SHA-512 digest stream verification.<br>• Envelope Encryption Engine (AES-256-GCM).<br>• Immutable hash-chained audit ledger ($\text{entryHash}_n$).<br>• OpenPDF statutory BSA 2023 §63 PDF court certificate generator.<br>• Hybrid full-text & vector search engine (`/api/v1/search`).<br>• Resilient AI gateway client (`AiGatewayClient`). |
-| **AI/ML Subsystem (FastAPI)** | • PaddleOCR v3.7+ structural text layout extraction.<br>• spaCy + Regex Indian legal NER (Aadhaar, PAN, IPC/BNS sections).<br>• Spatial 2D bounding box generation `[min_x, min_y, max_x, max_y]`.<br>• Non-destructive annotation linking. |
-| **Storage & KMS Layer** | • S3 / MinIO WORM Object Lock in `COMPLIANCE` retention mode.<br>• HashiCorp Vault Transit Engine master KEK wrapping of DEKs.<br>• Hardware-enforced object immutability. |
-| **Database Tier (PostgreSQL)** | • Relational storage for Cases, Evidence, Users, Custody Events.<br>• Append-only `audit_ledger` table with `@Column(updatable = false)`.<br>• Atomic single-transaction commit gate. |
+| **Primary Scope** | Client-side pre-hashing, sandboxed document viewing, dynamic forensic watermarking |
+| **Technologies Used** | Next.js / React 18, WebCrypto API, HTML5 Canvas, PDF.js |
+| **Security Controls** | Pre-transmission SHA-256 calculation, right-click & drag prevention, dynamic watermark overlay |
+| **Data In / Out** | **Input**: Raw evidence file selected by user <br> **Output**: HTTP payload + `X-Client-SHA256` header + Bearer JWT |
+
+#### Key Mechanics:
+1. **Client-Side SHA-256 Pre-Hashing**: Before network streaming begins, the browser calculates a 64-character hex checksum (`clientSha256`) using native `crypto.subtle.digest('SHA-256', buffer)`. This is sent in the `X-Client-SHA256` HTTP header for in-flight integrity validation.
+2. **Sandboxed HTML5 Canvas Viewer**: Documents and evidence scans are rendered onto an HTML5 Canvas target via PDF.js. Direct PDF downloads, text selection, printing, and context menus are strictly disabled.
+3. **Dynamic Forensic Watermarking**: Draws an indelible diagonal overlay across canvas pixels displaying the viewing officer's badge number, station code, IP address, and access timestamp to prevent smartphone screen photography leaks.
+
+> [!NOTE]
+> Client-side hashing provides early integrity assurance; the server independently recalculates all digests before persisting data.
+
+---
+
+### 🛡️ Tier 2: Ingress Security Perimeter & Stream Verification Layer
+
+| Attribute | Specification |
+|---|---|
+| **Primary Scope** | JWT authentication, RBAC method security, ABAC case scoping, streaming dual-digest validation |
+| **Technologies Used** | Java 21, Spring Security, JJWT (HMAC-SHA256), Spring `DigestInputStream` |
+| **Security Controls** | Token signature verification, 7-role RBAC gates, lead officer ABAC evaluation, streaming hash match |
+| **Data In / Out** | **Input**: Multipart file request + JWT + `clientSha256` <br> **Output**: Verified byte stream + server SHA-256/512 digests |
+
+#### Key Mechanics:
+1. **Stateless JWT Validation**: `JwtAuthenticationFilter` validates token signatures and claims, extracting `userId`, `role`, and `department`.
+2. **Role & Attribute-Based Authorization**:
+   - **RBAC Gate**: Method security (`@PreAuthorize("hasRole('INVESTIGATING_OFFICER')")`) verifies action permissions.
+   - **ABAC Gate**: `CaseSecurityService` verifies lead officer assignment, active case status (`OPEN` or `UNDER_INVESTIGATION`), and police station jurisdiction.
+3. **Streaming Dual-Digest Verification**: Spring `DigestInputStream` reads incoming bytes, calculating SHA-256 and SHA-512 in a single pass. If `serverSha256 != clientSha256`, the connection terminates immediately with `400 Bad Request`.
+
+---
+
+### 🔒 Tier 3: Cryptographic Storage, Vault KMS & Ledger Engine Tier
+
+| Attribute | Specification |
+|---|---|
+| **Primary Scope** | Envelope encryption, Master KEK wrapping, S3 WORM Object Locking, hash-chained ledger commit |
+| **Technologies Used** | AES-256-GCM, HashiCorp Vault Transit Engine, MinIO / AWS S3 WORM, PostgreSQL |
+| **Security Controls** | Single-use DEK per file, Object Lock COMPLIANCE mode, `@Column(updatable = false)` immutability |
+| **Data In / Out** | **Input**: Validated evidence stream <br> **Output**: Encrypted WORM object + wrapped DEK + immutable `audit_ledger` block |
+
+#### Key Mechanics:
+1. **AES-256-GCM Payload Encryption**: Generates a random single-use Data Encryption Key (DEK). Encrypts binary stream using `AES-256-GCM` with a 12-byte random Initialization Vector (IV).
+2. **Vault KMS Key Wrapping**: Invokes HashiCorp Vault Transit Engine (`POST /v1/transit/encrypt/evault-master-kek`) to wrap the DEK under a master Key Encryption Key (KEK), returning Base64 `wrappedDek`.
+3. **Hardware WORM Storage**: `S3WormStorageService` stores ciphertext in MinIO / S3 configured with **Object Lock in COMPLIANCE mode** (e.g. 365-day retention), physically blocking deletion or modification.
+4. **Atomic Hash-Chained Audit Ledger Commit**: Executes database write under a single `@Transactional` commit gate, generating an immutable transaction block:
+   $$\text{entryHash}_n = \text{SHA-256}(\text{seq}_n \parallel \text{occurredAt}_n \parallel \text{actorId}_n \parallel \text{action}_n \parallel \text{resourceRef}_n \parallel \text{details}_n \parallel \text{entryHash}_{n-1})$$
+
+> [!IMPORTANT]
+> The ledger block commit is atomic: evidence record, custody event, and hash chain block execute in one database transaction.
+
+---
+
+### 🤖 Tier 4: AI/ML Microservice Subsystem (Python FastAPI)
+
+| Attribute | Specification |
+|---|---|
+| **Primary Scope** | OCR text extraction, PII entity recognition, spatial bounding box coordinate generation |
+| **Technologies Used** | Python 3.12, FastAPI, PaddleOCR v3.7+, spaCy, OpenCV, Regex Engine |
+| **Security Controls** | Isolated micro-worker execution, non-destructive annotation storage (original binary untouched) |
+| **Data In / Out** | **Input**: Document image binary <br> **Output**: JSON OCR text + PII bounding boxes `[min_x, min_y, max_x, max_y]` |
+
+#### Key Mechanics:
+1. **PaddleOCR Structural Layout Analysis**: Asynchronously processes document images, extracting line coordinates, structural layouts, and raw text.
+2. **Statutory PII & Legal NER Engine**: Scans text for Indian regulatory identifiers (12-digit Aadhaar, 10-char PAN, phone numbers, email addresses, IPC/BNS sections).
+3. **Non-Destructive Annotation Linking**: Returns spatial 2D bounding box coordinates stored in `AiAnalysis` entities. The original evidence binary on WORM storage remains 100% untouched.
+
+---
+
+### 📜 Tier 5: Statutory BSA 2023 §63 Certification & Independent Audit Tier
+
+| Attribute | Specification |
+|---|---|
+| **Primary Scope** | BSA 2023 §63 court PDF certificate generation, whole-ledger cryptographic audit verification |
+| **Technologies Used** | OpenPDF 2.0.3, PostgreSQL, QR Code Generator, WebSockets |
+| **Security Controls** | Cryptographic hash binding, statutory legal declaration, genesis-to-head chain verification |
+| **Data In / Out** | **Input**: Certified evidence ID <br> **Output**: Court-admissible signed PDF + QR verification seal + whole-ledger status |
+
+#### Key Mechanics:
+1. **Automated BSA §63 Certificate Generation**: Compiles case details, hardware parameters, acquisition date, SHA-256/512 hashes, HMAC seal, and custody timeline into an official PDF per BSA 2023 §63 schedule (Part A hardware, Part B hashes, QR Code).
+2. **Whole-Ledger Cryptographic Audit**: Auditors execute `GET /api/v1/ledger/verify`. The system recalculates SHA-256 block hashes sequentially from genesis block ($n=1$) to head ($n=N$). If intact, returns **`LEDGER_INTEGRITY_VERIFIED`** seal; if tampered, pinpoints exact `brokenSeq`.
+
+> [!TIP]
+> The generated §63 PDF contains a verifiable QR code linking directly to the system's ledger verification endpoint for courtroom verification.
 
 ---
 
