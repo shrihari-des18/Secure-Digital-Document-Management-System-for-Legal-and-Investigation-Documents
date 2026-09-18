@@ -15,12 +15,15 @@ import com.shrihari.evault.repository.CaseRepository;
 import com.shrihari.evault.repository.EvidenceFileRepository;
 import com.shrihari.evault.repository.EvidenceItemRepository;
 import com.shrihari.evault.service.storage.StorageService;
+import com.shrihari.evault.service.crypto.EnvelopeEncryptionEngine;
+import com.shrihari.evault.service.crypto.VaultKmsClientService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 
@@ -54,6 +57,11 @@ class EvidenceServiceTest {
 
     @Mock
     private CustodyService custodyService;
+
+    @Spy
+    private EnvelopeEncryptionEngine envelopeEncryptionEngine = new EnvelopeEncryptionEngine(
+            new VaultKmsClientService("http://localhost:8200", "root", "evault-master-kek")
+    );
 
     @InjectMocks
     private EvidenceService evidenceService;

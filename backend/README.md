@@ -7,7 +7,7 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16%2B-blue.svg?style=flat-square&logo=postgresql)](https://www.postgresql.org/)
 [![OpenPDF](https://img.shields.io/badge/OpenPDF-2.0.3-yellow.svg?style=flat-square)](https://github.com/LibrePDF/OpenPDF)
 [![OpenAPI 3.0](https://img.shields.io/badge/OpenAPI-3.0%20Swagger-green.svg?style=flat-square&logo=swagger)](http://localhost:8080/swagger-ui/index.html)
-[![Build Status](https://img.shields.io/badge/Build-Passing%20(38%2F38%20Tests)-success.svg?style=flat-square)]()
+[![Build Status](https://img.shields.io/badge/Build-Passing%20(42%2F42%20Tests)-success.svg?style=flat-square)]()
 [![Compliance](https://img.shields.io/badge/Compliance-BSA%202023%20§63-informational.svg?style=flat-square)]()
 
 ---
@@ -194,6 +194,14 @@ flowchart TD
 - **Immutability Guarantee**:
   - Raw evidence files and primary SHA-256/SHA-512 hashes remain untouched; AI annotations reside strictly in the dedicated `ai_analyses` entity.
 
+### Tasks 1, 2 & 4: Storage WORM, KMS Envelope Encryption & Hybrid Search Subsystems
+- **Task 1: BE-01 (MinIO / S3 WORM Object Storage Integration)**:
+  - `S3WormStorageService.java`: Implements S3 / MinIO Object Lock `COMPLIANCE` retention mode for hardware-enforced immutability. Automatically defaults to `LocalStorageService` (`app.storage.type=local`) with zero-dependency execution.
+- **Task 2: BE-02 (Key Vault KMS Envelope Encryption Subsystem)**:
+  - `EnvelopeEncryptionEngine.java` & `VaultKmsClientService.java`: Performs AES-256-GCM envelope encryption over raw evidence binary payloads. Wraps/unwraps ephemeral 256-bit DEKs using HashiCorp Vault Transit Engine with resilient local Master KEK fallback for dev/test environments.
+- **Task 4: BE-04 (OpenSearch Hybrid Full-Text & Vector Search Integration)**:
+  - `OpenSearchClientService.java` & `SearchController.java`: Exposes `GET /api/v1/search` for full-text and semantic vector search across cases, evidence OCR text, detected PII, and versioned legal documents with automated JPA database search fallback.
+
 ---
 
 ## 5. API Reference Guide
@@ -261,6 +269,11 @@ Base URL: `http://localhost:8080/api/v1`
 | `GET` | `/api/v1/documents/case/{caseId}` | List legal documents for a case | IO, Prosecutor, Court, Custodian, Auditor, Admin | None |
 | `GET` | `/api/v1/documents/{id}/versions` | Get full revision history and hashes | IO, Prosecutor, Court, Custodian, Auditor, Admin | None |
 | `GET` | `/api/v1/documents/{id}/download` | Stream document file (`?version=N` optional) | IO, Prosecutor, Court, Custodian, Auditor, Admin | None |
+
+### Search Engine Subsystem (`/search`)
+| Method | Endpoint | Description | Permitted Roles | Request Body / Query Params |
+|---|---|---|---|---|
+| `GET` | `/api/v1/search` | Hybrid full-text & semantic vector search across cases, evidence OCR, PII, & legal docs | Authenticated Users | Query Params: `query`, `type` (`ALL`/`CASE`/`EVIDENCE`/`DOCUMENT`), `page`, `size` |
 
 ---
 
@@ -372,14 +385,19 @@ backend/
 │   │   │       ├── CustodyService.java
 │   │   │       ├── EvidenceService.java
 │   │   │       ├── LegalDocumentService.java
-│   │   │       ├── UserService.java
+│   │   │       ├── crypto/
+│   │   │       │   ├── EnvelopeEncryptionEngine.java # AES-256-GCM payload encryption
+│   │   │       │   └── VaultKmsClientService.java    # Vault Transit DEK wrapping & KEK fallback
 │   │   │       ├── pdf/
 │   │   │       │   └── PdfCertificateGenerator.java # Statutory PDF engine
+│   │   │       ├── search/
+│   │   │       │   └── OpenSearchClientService.java  # OpenSearch hybrid & JPA fallback search
 │   │   │       └── storage/
 │   │   │           ├── LocalStorageService.java     # Local filesystem driver
+│   │   │           ├── S3WormStorageService.java    # MinIO / S3 WORM Object Lock storage
 │   │   │           └── StorageService.java          # Pluggable storage SPI
 │   │   └── resources/
-│   │       └── application.properties         # Main config (PostgreSQL, Storage, JWT, AI URL)
+│   │       └── application.properties         # Main config (PostgreSQL, Storage, KMS, OpenSearch, JWT)
 │   └── test/
 │       ├── java/com/shrihari/evault/
 │       │   ├── EvaultApplicationTests.java
@@ -393,6 +411,7 @@ backend/
 │       │   │   ├── EvidenceControllerIntegrationTest.java
 │       │   │   ├── LedgerAndCustodyIntegrationTest.java
 │       │   │   ├── LegalDocumentControllerIntegrationTest.java
+│       │   │   ├── SearchControllerIntegrationTest.java
 │       │   │   └── SecurityAccessControlIntegrationTest.java
 │       │   └── service/
 │       │       ├── AiAnalysisServiceTest.java
@@ -400,9 +419,11 @@ backend/
 │       │       ├── CaseServiceTest.java
 │       │       ├── CertificateServiceTest.java
 │       │       ├── CustodyServiceTest.java
+│       │       ├── EnvelopeEncryptionEngineTest.java
 │       │       ├── EvidenceServiceTest.java
 │       │       ├── LegalDocumentServiceTest.java
 │       │       ├── PdfCertificateGeneratorTest.java
+│       │       ├── S3WormStorageServiceTest.java
 │       │       └── UserServiceTest.java
 │       └── resources/
 │           └── application-test.properties    # H2 In-Memory DB test configuration
@@ -412,11 +433,11 @@ backend/
 
 ## 7. Automated Test Suite
 
-The system includes a 100% automated test suite with **38 passing unit and integration tests**:
+The system includes a 100% automated test suite with **42 passing unit and integration tests**:
 
 ```text
 [INFO] Results:
-[INFO] Tests run: 38, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Tests run: 42, Failures: 0, Errors: 0, Skipped: 0
 [INFO] ------------------------------------------------------------------------
 [INFO] BUILD SUCCESS
 [INFO] ------------------------------------------------------------------------
@@ -426,6 +447,9 @@ The system includes a 100% automated test suite with **38 passing unit and integ
 
 | Category | Test Class | Methods Tested | Focus |
 |---|---|:---:|---|
+| **Storage & KMS** | `S3WormStorageServiceTest` | 1 | S3/MinIO Object Lock WORM retention rules, byte retrieval, and local storage fallback |
+| **Storage & KMS** | `EnvelopeEncryptionEngineTest` | 2 | AES-256-GCM payload encryption/decryption roundtrip, Vault DEK wrapping & local master KEK fallback |
+| **Search Subsystem** | `SearchControllerIntegrationTest` | 1 | `GET /api/v1/search` REST integration with query parameters and authentication |
 | **AI/ML Gateway** | `AiAnalysisServiceTest` | 1 | AI trigger execution, mock client fallback, status state transition to `COMPLETED` |
 | **AI/ML Gateway** | `AiAnalysisControllerIntegrationTest` | 1 | `POST /analyze` dispatch and `GET /analysis` retrieval MockMvc integration |
 | **Security & Auth** | `AuthControllerIntegrationTest` | 2 | Registration, Login, Token validation, Bad credentials (401), Tampered JWT rejection |
