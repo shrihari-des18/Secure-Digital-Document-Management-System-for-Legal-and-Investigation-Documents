@@ -123,5 +123,24 @@ To ensure the AI/ML service is working perfectly before integrating with the Jav
 3. **Select Endpoint:** Click on `POST /api/v1/process-document`.
 4. **Prepare the Test:** Click **"Try it out"**.
 5. **Upload Image:** Click the "Choose File" button next to the `file` field. Select an image (like a fake FIR or a downloaded Aadhaar card sample).
-6. **Execute:** Click the large blue **"Execute"** button.
-7. **Verify Output:** Scroll down to the **"Server response"** section. You should see a `200` status code with the JSON body showing bounding boxes, document classification, and tamper scores.
+### 6. Execute: Click the large blue **"Execute"** button.
+### 7. Verify Output: Scroll down to the **"Server response"** section. You should see a `200` status code with the JSON body showing bounding boxes, document classification, and tamper scores.
+
+---
+
+## 🛠️ Troubleshooting
+
+**Issue:** `ModuleNotFoundError: No module named 'fastapi'` (or any other module).
+**Cause:** You are running the server using your global system Python instead of the isolated Virtual Environment (`venv`), or the dependencies haven't been installed yet.
+**Fix:** 
+Ensure you activate the environment and install dependencies before running the server:
+```bash
+# Linux/Mac
+source venv/bin/activate
+pip install -r requirements.txt
+
+# Windows
+.\venv\Scripts\activate
+pip install -r requirements.txt
+```
+Alternatively, just use the provided `./run.sh` or `run.bat` scripts which handle this automatically!

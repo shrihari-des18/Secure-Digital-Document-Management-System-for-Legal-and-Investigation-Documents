@@ -9,7 +9,7 @@ if [ ! -d "venv" ]; then
 fi
 
 echo "[2/3] Activating Virtual Environment..."
-source venv/bin/activate
+. venv/bin/activate
 
 echo "[3/3] Syncing Dependencies..."
 pip install -r requirements.txt
