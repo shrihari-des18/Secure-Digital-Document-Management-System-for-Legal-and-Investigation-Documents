@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  aiml-service:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: sih26190-aiml
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    # Use host network for faster local testing (optional, remove if deploying to prod)
+    # network_mode: "host" 
+    volumes:
+      # Optional: Mount a local models directory to cache PaddleOCR models so they don't re-download every restart
+      - ~/.paddlex:/root/.paddlex
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
