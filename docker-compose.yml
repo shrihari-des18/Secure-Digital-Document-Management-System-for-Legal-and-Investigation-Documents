@@ -1,0 +1,20 @@
+services:
+  opa:
+    build:
+      context: ./opa
+      dockerfile: Dockerfile
+    image: evault-opa
+    container_name: opa_server
+    ports:
+      - "8181:8181"
+    # Keep volume mount and --watch flag for local development reloading
+    volumes:
+      - ./opa/policies:/policies
+    command:
+      - run
+      - --server
+      - --addr
+      - 0.0.0.0:8181
+      - --log-level=debug
+      - --watch
+      - /policies

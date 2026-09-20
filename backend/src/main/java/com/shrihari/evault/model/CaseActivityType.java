@@ -1,0 +1,12 @@
+package com.shrihari.evault.model;
+
+public enum CaseActivityType {
+    CASE_CREATED,
+    CASE_STATUS_UPDATED,
+    CASE_METADATA_UPDATED,
+    EVIDENCE_INGESTED,
+    CUSTODY_TRANSFERRED,
+    DOCUMENT_VERSION_ADDED,
+    AI_ANALYSIS_COMPLETED,
+    SECURITY_ALARM
+}

@@ -8,6 +8,9 @@ import com.shrihari.evault.exception.InvalidOperationException;
 import com.shrihari.evault.exception.ResourceNotFoundException;
 import com.shrihari.evault.model.Case;
 import com.shrihari.evault.model.CaseStatus;
+import com.shrihari.evault.common.ActorContext;
+import com.shrihari.evault.common.ActorContextHolder;
+import com.shrihari.evault.model.CaseActivityType;
 import com.shrihari.evault.repository.CaseRepository;
 import com.shrihari.evault.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -26,6 +30,7 @@ public class CaseService {
 
     private final CaseRepository caseRepository;
     private final UserRepository userRepository;
+    private final AlarmDispatcherService alarmDispatcherService;
 
     @Transactional
     public CaseResponse createCase(CreateCaseRequest request) {
@@ -54,6 +59,24 @@ public class CaseService {
 
         Case saved = caseRepository.save(newCase);
         log.info("Case created successfully with ID: {}", saved.getId());
+
+        if (alarmDispatcherService != null) {
+            try {
+                ActorContext actor = ActorContextHolder.get();
+                alarmDispatcherService.dispatchCaseActivity(
+                        saved.getId(),
+                        CaseActivityType.CASE_CREATED,
+                        actor != null ? actor.getActorId() : null,
+                        actor != null ? actor.getUsername() : null,
+                        actor != null ? actor.getRole() : null,
+                        "Case created: " + saved.getCaseNumber() + " - " + saved.getTitle(),
+                        Map.of("caseNumber", saved.getCaseNumber(), "title", saved.getTitle(), "status", saved.getStatus().name())
+                );
+            } catch (Exception e) {
+                log.warn("Failed to dispatch case activity for case creation", e);
+            }
+        }
+
         return CaseResponse.fromEntity(saved);
     }
 
@@ -99,6 +122,24 @@ public class CaseService {
         }
 
         Case updated = caseRepository.save(c);
+
+        if (alarmDispatcherService != null) {
+            try {
+                ActorContext actor = ActorContextHolder.get();
+                alarmDispatcherService.dispatchCaseActivity(
+                        updated.getId(),
+                        CaseActivityType.CASE_METADATA_UPDATED,
+                        actor != null ? actor.getActorId() : null,
+                        actor != null ? actor.getUsername() : null,
+                        actor != null ? actor.getRole() : null,
+                        "Case metadata updated for " + updated.getCaseNumber(),
+                        Map.of("caseNumber", updated.getCaseNumber(), "title", updated.getTitle())
+                );
+            } catch (Exception e) {
+                log.warn("Failed to dispatch case activity for case update", e);
+            }
+        }
+
         return CaseResponse.fromEntity(updated);
     }
 
@@ -113,6 +154,24 @@ public class CaseService {
 
         c.setStatus(newStatus);
         Case updated = caseRepository.save(c);
+
+        if (alarmDispatcherService != null) {
+            try {
+                ActorContext actor = ActorContextHolder.get();
+                alarmDispatcherService.dispatchCaseActivity(
+                        updated.getId(),
+                        CaseActivityType.CASE_STATUS_UPDATED,
+                        actor != null ? actor.getActorId() : null,
+                        actor != null ? actor.getUsername() : null,
+                        actor != null ? actor.getRole() : null,
+                        "Case status transitioned to " + newStatus + (reason != null ? " (Reason: " + reason + ")" : ""),
+                        Map.of("caseNumber", updated.getCaseNumber(), "status", newStatus.name(), "reason", reason != null ? reason : "")
+                );
+            } catch (Exception e) {
+                log.warn("Failed to dispatch case activity for case status update", e);
+            }
+        }
+
         return CaseResponse.fromEntity(updated);
     }
 

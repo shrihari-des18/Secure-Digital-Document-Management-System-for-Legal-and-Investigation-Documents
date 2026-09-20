@@ -11,7 +11,7 @@ The E-Vault is designed for legal admissibility and chain-of-custody preservatio
 1. **Backend Core Subsystem (Java 21 LTS / Spring Boot 4.1.1)**: Handles authentication, RBAC/ABAC access control, FIR case dockets, evidence intake, cryptographic hash sealing, append-only audit ledgers, custody tracking, and statutory §63 PDF court certificates.
 2. **AI/ML Microservice Subsystem (Python 3.12 / FastAPI / PaddleOCR)**: Handles document text extraction (OCR), PII entity recognition, bounding box detection, and forensic analysis.
 
-- **Current Build Status**: **38 / 38 Automated Backend Tests Passing** (`mvn test` build success).
+- **Current Build Status**: **54 / 54 Automated Backend Tests Passing** (`mvn test` build success).
 
 ---
 
@@ -36,6 +36,11 @@ The E-Vault is designed for legal admissibility and chain-of-custody preservatio
 │                          │ • OpenPDF BSA 2023 §63 court PDF generator.            │
 │                          │ • Legal document versioning ($v1, v2, \dots$).         │
 │                          │ • Resilient AI Gateway HTTP client with fallback.      │
+│                          │ • STOMP WebSocket broker with JWT auth (`/ws-evault`). │
+│                          │ • Real-time Security Alarms (`/topic/security/alarms`).│
+│                          │ • Real-time Case Activity feeds (`/topic/case/{id}`).  │
+│                          │ • Auto-triggered alerts on ledger tamper & bit-rot.    │
+│                          │ • Security Alarms REST API with auditor acknowledgment.│
 ├──────────────────────────┼────────────────────────────────────────────────────────┤
 │ **AI/ML (FastAPI)**      │ • Asynchronous FastAPI Uvicorn engine.                 │
 │                          │ • PaddleOCR v3.7+ text & bounding box extraction.      │
@@ -173,7 +178,7 @@ The E-Vault is designed for legal admissibility and chain-of-custody preservatio
 | **BE-02** | **Backend** | Vault Transit KMS Envelope Encryption | Protection of encrypted data keys at rest | **P0 (Critical)** |
 | **BE-03** | **Backend** | Open Policy Agent (OPA) Dynamic ABAC PDP | Dynamic clearance & context policy enforcement | **P1 (High)** |
 | **BE-04** | **Backend** | OpenSearch Hybrid Lexical & Vector Search | High-speed semantic search across evidence text | **P2 (Medium)** |
-| **BE-05** | **Backend** | Real-Time WebSockets & Security Alarms | Live tamper alerts broadcast to dashboards | **P2 (Medium)** |
+| **BE-05** | **Backend** | Real-Time WebSockets & Security Alarms | Live tamper alerts broadcast to dashboards | **COMPLETED (54/54 Tests Passing)** |
 | **ML-01** | **AI/ML** | Image Tampering Detection (ELA & EXIF) | Automated visual evidence manipulation check | **P1 (High)** |
 | **ML-02** | **AI/ML** | Perceptual Hashing (`pHash`) Deduplication | Visual similarity search across cases | **P1 (High)** |
 | **ML-03** | **AI/ML** | Multi-Class Legal Document Classifier | Automated document intake tagging | **P2 (Medium)** |

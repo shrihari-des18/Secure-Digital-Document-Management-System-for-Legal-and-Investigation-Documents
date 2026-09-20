@@ -81,6 +81,7 @@ class LedgerAndCustodyIntegrationTest {
     void setUp() throws Exception {
         custodyEventRepository.deleteAll();
         auditLedgerRepository.deleteAll();
+        jdbcTemplate.execute("ALTER TABLE audit_ledger ALTER COLUMN seq RESTART WITH 1");
         evidenceFileRepository.deleteAll();
         evidenceItemRepository.deleteAll();
         caseRepository.deleteAll();

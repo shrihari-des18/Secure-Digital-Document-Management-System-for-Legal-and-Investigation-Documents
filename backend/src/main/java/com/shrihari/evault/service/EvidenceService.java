@@ -23,6 +23,9 @@ import com.shrihari.evault.repository.EvidenceItemRepository;
 import com.shrihari.evault.service.storage.StorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import com.shrihari.evault.model.CaseActivityType;
+import com.shrihari.evault.model.SecurityAlarmLevel;
+import com.shrihari.evault.model.SecurityAlarmType;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
@@ -33,6 +36,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -45,6 +49,7 @@ public class EvidenceService {
     private final CaseRepository caseRepository;
     private final StorageService storageService;
     private final CustodyService custodyService;
+    private final AlarmDispatcherService alarmDispatcherService;
 
     @Value("${app.crypto.system-secret:SIH26190_CHAIN_OF_CUSTODY_SECRET_KEY_2026}")
     private String systemSecret = "SIH26190_CHAIN_OF_CUSTODY_SECRET_KEY_2026";
@@ -146,6 +151,28 @@ public class EvidenceService {
         );
 
         log.info("Evidence item {} sealed with SHA-256: {}", savedItem.getId(), serverSha256);
+
+        if (alarmDispatcherService != null) {
+            try {
+                alarmDispatcherService.dispatchCaseActivity(
+                        savedItem.getCaseId(),
+                        CaseActivityType.EVIDENCE_INGESTED,
+                        actorId,
+                        actor != null ? actor.getUsername() : null,
+                        actor != null ? actor.getRole() : null,
+                        "Evidence ingested: " + savedItem.getEvidenceNumber() + " (" + savedItem.getTitle() + ")",
+                        Map.of(
+                                "evidenceId", savedItem.getId().toString(),
+                                "evidenceNumber", savedItem.getEvidenceNumber(),
+                                "classification", savedItem.getClassification().name(),
+                                "sha256", serverSha256
+                        )
+                );
+            } catch (Exception e) {
+                log.warn("Failed to dispatch case activity for evidence ingest", e);
+            }
+        }
+
         return EvidenceDetailResponse.fromEntity(savedItem, EvidenceFileResponse.fromEntity(savedFile));
     }
 
@@ -214,6 +241,28 @@ public class EvidenceService {
         try (InputStream is = storageService.openInputStream(file.getStoragePath())) {
             String calculatedSha256 = CryptoUtil.calculateSha256(is);
             boolean matches = calculatedSha256.equalsIgnoreCase(file.getSha256());
+
+            if (!matches && alarmDispatcherService != null) {
+                try {
+                    alarmDispatcherService.dispatchSecurityAlarm(
+                            SecurityAlarmType.FILE_BIT_ROT_DETECTED,
+                            SecurityAlarmLevel.CRITICAL,
+                            "EVIDENCE:" + evidenceId,
+                            "CRITICAL BIT-ROT / FILE TAMPER DETECTED for evidence " + item.getEvidenceNumber() +
+                                    " (" + item.getTitle() + "): Stored file hash does not match intake hash.",
+                            Map.of(
+                                    "evidenceId", evidenceId.toString(),
+                                    "evidenceNumber", item.getEvidenceNumber(),
+                                    "caseId", item.getCaseId().toString(),
+                                    "recordedSha256", file.getSha256(),
+                                    "calculatedSha256", calculatedSha256
+                            ),
+                            item.getCaseId()
+                    );
+                } catch (Exception e) {
+                    log.error("Failed to dispatch security alarm for evidence bit-rot", e);
+                }
+            }
 
             return IntegrityVerificationResponse.builder()
                     .evidenceId(evidenceId)

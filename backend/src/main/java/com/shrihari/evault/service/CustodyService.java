@@ -12,6 +12,7 @@ import com.shrihari.evault.model.CustodyEventType;
 import com.shrihari.evault.model.CustodyState;
 import com.shrihari.evault.model.EvidenceItem;
 import com.shrihari.evault.repository.CustodyEventRepository;
+import com.shrihari.evault.model.CaseActivityType;
 import com.shrihari.evault.repository.EvidenceItemRepository;
 import com.shrihari.evault.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -33,6 +35,7 @@ public class CustodyService {
     private final EvidenceItemRepository evidenceItemRepository;
     private final UserRepository userRepository;
     private final AuditLedgerService auditLedgerService;
+    private final AlarmDispatcherService alarmDispatcherService;
 
     @Value("${app.crypto.system-secret:SIH26190_CHAIN_OF_CUSTODY_SECRET_KEY_2026}")
     private String systemSecret = "SIH26190_CHAIN_OF_CUSTODY_SECRET_KEY_2026";
@@ -89,14 +92,38 @@ public class CustodyService {
         item.setCustodyState(CustodyState.TRANSFERRED);
         evidenceItemRepository.save(item);
 
-        return recordEvent(
+        CustodyEventResponse response = recordEvent(
                 evidenceId,
                 CustodyEventType.TRANSFER,
-                actor.getActorId(),
+                actor != null ? actor.getActorId() : null,
                 fromParty,
                 toParty,
                 request.getReason()
         );
+
+        if (alarmDispatcherService != null) {
+            try {
+                alarmDispatcherService.dispatchCaseActivity(
+                        item.getCaseId(),
+                        CaseActivityType.CUSTODY_TRANSFERRED,
+                        actor != null ? actor.getActorId() : null,
+                        actor != null ? actor.getUsername() : null,
+                        actor != null ? actor.getRole() : null,
+                        "Custody of evidence " + item.getEvidenceNumber() + " transferred to " + toParty,
+                        Map.of(
+                                "evidenceId", evidenceId.toString(),
+                                "evidenceNumber", item.getEvidenceNumber(),
+                                "fromParty", fromParty != null ? fromParty.toString() : "",
+                                "toParty", toParty.toString(),
+                                "reason", request.getReason() != null ? request.getReason() : ""
+                        )
+                );
+            } catch (Exception e) {
+                log.warn("Failed to dispatch case activity for custody transfer", e);
+            }
+        }
+
+        return response;
     }
 
     @Transactional(readOnly = true)

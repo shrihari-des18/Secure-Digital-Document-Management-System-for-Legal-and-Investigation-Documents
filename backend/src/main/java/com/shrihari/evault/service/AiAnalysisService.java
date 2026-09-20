@@ -13,11 +13,13 @@ import com.shrihari.evault.model.EvidenceItem;
 import com.shrihari.evault.repository.AiAnalysisRepository;
 import com.shrihari.evault.repository.EvidenceItemRepository;
 import com.shrihari.evault.service.ai.AiGatewayClient;
+import com.shrihari.evault.model.CaseActivityType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -30,6 +32,7 @@ public class AiAnalysisService {
     private final AiGatewayClient aiGatewayClient;
     private final CustodyService custodyService;
     private final AuditLedgerService auditLedgerService;
+    private final AlarmDispatcherService alarmDispatcherService;
 
     @Transactional
     public AiAnalysisResponse triggerAnalysis(UUID evidenceId, TriggerAnalysisRequest request) {
@@ -90,6 +93,28 @@ public class AiAnalysisService {
 
         AiAnalysis saved = aiAnalysisRepository.save(analysis);
         log.info("AI analysis completed for evidence ID: {} with status: {}", evidenceId, saved.getStatus());
+
+        if (alarmDispatcherService != null) {
+            try {
+                alarmDispatcherService.dispatchCaseActivity(
+                        evidence.getCaseId(),
+                        CaseActivityType.AI_ANALYSIS_COMPLETED,
+                        actorId,
+                        actor != null ? actor.getUsername() : null,
+                        actor != null ? actor.getRole() : null,
+                        "AI/ML analysis completed for evidence " + evidence.getEvidenceNumber() + " with status " + saved.getStatus(),
+                        Map.of(
+                                "evidenceId", evidenceId.toString(),
+                                "evidenceNumber", evidence.getEvidenceNumber(),
+                                "status", saved.getStatus().name(),
+                                "confidenceScore", saved.getConfidenceScore() != null ? saved.getConfidenceScore() : 0.0
+                        )
+                );
+            } catch (Exception e) {
+                log.warn("Failed to dispatch case activity for AI analysis", e);
+            }
+        }
+
         return AiAnalysisResponse.fromEntity(saved);
     }
 

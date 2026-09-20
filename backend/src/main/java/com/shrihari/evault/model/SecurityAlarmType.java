@@ -1,0 +1,10 @@
+package com.shrihari.evault.model;
+
+public enum SecurityAlarmType {
+    LEDGER_INTEGRITY_BREACH,
+    FILE_BIT_ROT_DETECTED,
+    TAMPER_SUSPECT,
+    UNAUTHORIZED_ACCESS_ATTEMPT,
+    SUSPICIOUS_CUSTODY_TRANSFER,
+    SYSTEM_ALERT
+}

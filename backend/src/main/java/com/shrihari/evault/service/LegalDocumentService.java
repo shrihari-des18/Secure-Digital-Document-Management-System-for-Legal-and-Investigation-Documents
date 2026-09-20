@@ -14,6 +14,7 @@ import com.shrihari.evault.model.Case;
 import com.shrihari.evault.model.CaseStatus;
 import com.shrihari.evault.model.DocumentVersion;
 import com.shrihari.evault.model.LegalDocument;
+import com.shrihari.evault.model.CaseActivityType;
 import com.shrihari.evault.repository.CaseRepository;
 import com.shrihari.evault.repository.DocumentVersionRepository;
 import com.shrihari.evault.repository.LegalDocumentRepository;
@@ -29,6 +30,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -41,6 +43,7 @@ public class LegalDocumentService {
     private final CaseRepository caseRepository;
     private final StorageService storageService;
     private final AuditLedgerService auditLedgerService;
+    private final AlarmDispatcherService alarmDispatcherService;
 
     @Value("${app.crypto.system-secret:SIH26190_CHAIN_OF_CUSTODY_SECRET_KEY_2026}")
     private String systemSecret = "SIH26190_CHAIN_OF_CUSTODY_SECRET_KEY_2026";
@@ -112,6 +115,27 @@ public class LegalDocumentService {
         String details = "{\"docNumber\":\"" + savedDoc.getDocumentNumber() + "\",\"type\":\"" + savedDoc.getDocumentType() + "\",\"v\":1,\"sha256\":\"" + sha256 + "\"}";
         auditLedgerService.appendEntry(actorId, "DOCUMENT_CREATED", "DOCUMENT:" + savedDoc.getDocumentNumber(), details);
 
+        if (alarmDispatcherService != null) {
+            try {
+                alarmDispatcherService.dispatchCaseActivity(
+                        savedDoc.getCaseId(),
+                        CaseActivityType.DOCUMENT_VERSION_ADDED,
+                        actorId,
+                        actor != null ? actor.getUsername() : null,
+                        actor != null ? actor.getRole() : null,
+                        "Legal document filed: " + savedDoc.getDocumentNumber() + " (" + savedDoc.getTitle() + ") v1",
+                        Map.of(
+                                "documentId", savedDoc.getId().toString(),
+                                "documentNumber", savedDoc.getDocumentNumber(),
+                                "version", 1,
+                                "sha256", sha256
+                        )
+                );
+            } catch (Exception e) {
+                log.warn("Failed to dispatch case activity for legal document creation", e);
+            }
+        }
+
         return LegalDocumentResponse.fromEntity(savedDoc, DocumentVersionResponse.fromEntity(savedVersion));
     }
 
@@ -172,6 +196,28 @@ public class LegalDocumentService {
         // 6. Append to Audit Ledger
         String details = "{\"docNumber\":\"" + doc.getDocumentNumber() + "\",\"v\":" + nextVersion + ",\"sha256\":\"" + sha256 + "\",\"reason\":\"" + request.getChangeSummary() + "\"}";
         auditLedgerService.appendEntry(actorId, "DOCUMENT_REVISED", "DOCUMENT:" + doc.getDocumentNumber() + ":v" + nextVersion, details);
+
+        if (alarmDispatcherService != null) {
+            try {
+                alarmDispatcherService.dispatchCaseActivity(
+                        doc.getCaseId(),
+                        CaseActivityType.DOCUMENT_VERSION_ADDED,
+                        actorId,
+                        actor != null ? actor.getUsername() : null,
+                        actor != null ? actor.getRole() : null,
+                        "Legal document revised: " + doc.getDocumentNumber() + " v" + nextVersion + " (" + request.getChangeSummary() + ")",
+                        Map.of(
+                                "documentId", doc.getId().toString(),
+                                "documentNumber", doc.getDocumentNumber(),
+                                "version", nextVersion,
+                                "changeSummary", request.getChangeSummary() != null ? request.getChangeSummary() : "",
+                                "sha256", sha256
+                        )
+                );
+            } catch (Exception e) {
+                log.warn("Failed to dispatch case activity for document revision", e);
+            }
+        }
 
         return DocumentVersionResponse.fromEntity(savedVersion);
     }

@@ -5,6 +5,8 @@ import com.shrihari.evault.dto.AuditLedgerResponse;
 import com.shrihari.evault.dto.LedgerVerificationResult;
 import com.shrihari.evault.model.AuditLedger;
 import com.shrihari.evault.repository.AuditLedgerRepository;
+import com.shrihari.evault.model.SecurityAlarmLevel;
+import com.shrihari.evault.model.SecurityAlarmType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -13,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -24,6 +27,7 @@ public class AuditLedgerService {
     public static final String GENESIS_HASH = "0000000000000000000000000000000000000000000000000000000000000000";
 
     private final AuditLedgerRepository auditLedgerRepository;
+    private final AlarmDispatcherService alarmDispatcherService;
 
     /**
      * Atomically appends a new block to the immutable hash-chained audit ledger.
@@ -81,20 +85,22 @@ public class AuditLedgerService {
             // 1. Verify sequence continuity
             if (entry.getSeq() != expectedSeq) {
                 log.error("Ledger sequence gap or tampering detected! Expected seq {}, found {}", expectedSeq, entry.getSeq());
-                return LedgerVerificationResult.builder()
+                LedgerVerificationResult failure = LedgerVerificationResult.builder()
                         .valid(false)
                         .totalEntries(entries.size())
                         .brokenSeq(entry.getSeq())
                         .failureReason("Sequence discontinuity: Expected #" + expectedSeq + " but found #" + entry.getSeq())
                         .verifiedAt(Instant.now())
                         .build();
+                dispatchLedgerAlarm(failure);
+                return failure;
             }
 
             // 2. Verify previous hash linkage
             if (!entry.getPrevHash().equalsIgnoreCase(expectedPrevHash)) {
                 log.error("Broken chain linkage at seq #{}: expected prevHash {}, found {}",
                         entry.getSeq(), expectedPrevHash, entry.getPrevHash());
-                return LedgerVerificationResult.builder()
+                LedgerVerificationResult failure = LedgerVerificationResult.builder()
                         .valid(false)
                         .totalEntries(entries.size())
                         .brokenSeq(entry.getSeq())
@@ -102,6 +108,8 @@ public class AuditLedgerService {
                                 ": prevHash does not match hash of sequence #" + (expectedSeq - 1))
                         .verifiedAt(Instant.now())
                         .build();
+                dispatchLedgerAlarm(failure);
+                return failure;
             }
 
             // 3. Recompute row hash over payload
@@ -118,7 +126,7 @@ public class AuditLedgerService {
             if (!entry.getEntryHash().equalsIgnoreCase(calculatedHash)) {
                 log.error("Row data tampering detected at seq #{}: recorded {}, recalculated {}",
                         entry.getSeq(), entry.getEntryHash(), calculatedHash);
-                return LedgerVerificationResult.builder()
+                LedgerVerificationResult failure = LedgerVerificationResult.builder()
                         .valid(false)
                         .totalEntries(entries.size())
                         .brokenSeq(entry.getSeq())
@@ -126,6 +134,8 @@ public class AuditLedgerService {
                                 ": stored entryHash does not match hash recalculated over row contents")
                         .verifiedAt(Instant.now())
                         .build();
+                dispatchLedgerAlarm(failure);
+                return failure;
             }
 
             expectedPrevHash = entry.getEntryHash();
@@ -164,5 +174,26 @@ public class AuditLedgerService {
                 + prevHash;
 
         return CryptoUtil.calculateSha256(payload);
+    }
+
+    private void dispatchLedgerAlarm(LedgerVerificationResult failure) {
+        if (alarmDispatcherService != null) {
+            try {
+                alarmDispatcherService.dispatchSecurityAlarm(
+                        SecurityAlarmType.LEDGER_INTEGRITY_BREACH,
+                        SecurityAlarmLevel.CRITICAL,
+                        "LEDGER:" + failure.getBrokenSeq(),
+                        "CRITICAL AUDIT LEDGER COMPROMISE: " + failure.getFailureReason(),
+                        Map.of(
+                                "brokenSeq", failure.getBrokenSeq(),
+                                "failureReason", failure.getFailureReason(),
+                                "totalEntries", failure.getTotalEntries()
+                        ),
+                        null
+                );
+            } catch (Exception e) {
+                log.error("Failed to dispatch security alarm for ledger breach", e);
+            }
+        }
     }
 }
