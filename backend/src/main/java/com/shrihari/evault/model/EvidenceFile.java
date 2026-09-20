@@ -56,4 +56,7 @@ public class EvidenceFile extends BaseEntity {
 
     @Column(name = "signing_key_id", length = 64)
     private String signingKeyId;
+
+    @Column(name = "dek_wrapped", columnDefinition = "TEXT")
+    private String dekWrapped;
 }

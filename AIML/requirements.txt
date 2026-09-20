@@ -6,3 +6,7 @@ paddleocr
 paddlepaddle
 opencv-python-headless
 numpy
+httpx           # async HTTP client for downloading from signed URLs in /ml/v1/analyze
+pypdfium2       # PDF → image conversion for OCR pipeline
+imagehash       # perceptual hashing for image dedup
+Pillow          # required by imagehash; also used for EXIF metadata checks

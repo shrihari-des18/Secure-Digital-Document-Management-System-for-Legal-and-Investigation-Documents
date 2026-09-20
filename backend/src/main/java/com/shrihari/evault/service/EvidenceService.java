@@ -20,6 +20,7 @@ import com.shrihari.evault.model.IntegrityStatus;
 import com.shrihari.evault.repository.CaseRepository;
 import com.shrihari.evault.repository.EvidenceFileRepository;
 import com.shrihari.evault.repository.EvidenceItemRepository;
+import com.shrihari.evault.service.crypto.EnvelopeEncryptionEngine;
 import com.shrihari.evault.service.storage.StorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +28,7 @@ import com.shrihari.evault.model.CaseActivityType;
 import com.shrihari.evault.model.SecurityAlarmLevel;
 import com.shrihari.evault.model.SecurityAlarmType;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,6 +52,7 @@ public class EvidenceService {
     private final StorageService storageService;
     private final CustodyService custodyService;
     private final AlarmDispatcherService alarmDispatcherService;
+    private final EnvelopeEncryptionEngine envelopeEncryptionEngine;
 
     @Value("${app.crypto.system-secret:SIH26190_CHAIN_OF_CUSTODY_SECRET_KEY_2026}")
     private String systemSecret = "SIH26190_CHAIN_OF_CUSTODY_SECRET_KEY_2026";
@@ -123,6 +126,10 @@ public class EvidenceService {
 
         EvidenceItem savedItem = evidenceItemRepository.save(item);
 
+        // 6. Generate DEK and wrap via Vault KMS
+        byte[] rawDek = envelopeEncryptionEngine.generateDek();
+        String wrappedDek = envelopeEncryptionEngine.wrapDek(rawDek);
+
         // 6. Persist EvidenceFile
         EvidenceFile evidenceFile = EvidenceFile.builder()
                 .evidenceId(savedItem.getId())
@@ -135,7 +142,8 @@ public class EvidenceService {
                 .clientSha256(request.getClientSha256())
                 .integrityStatus(integrityStatus)
                 .digitalSignature(digitalSignature)
-                .signingKeyId(SIGNING_KEY_ID)
+                .signingKeyId(envelopeEncryptionEngine.getMasterKeyName())
+                .dekWrapped(wrappedDek)
                 .build();
 
         EvidenceFile savedFile = evidenceFileRepository.save(evidenceFile);
