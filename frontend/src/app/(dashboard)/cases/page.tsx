@@ -90,9 +90,9 @@ export default function CasesPage() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Top Banner & Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-zinc-100">Case Docket Registry</h1>
           <p className="text-xs text-zinc-400 mt-1">
@@ -110,9 +110,9 @@ export default function CasesPage() {
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="border border-zinc-800 bg-zinc-950 p-4 rounded-xl flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="border border-zinc-800 bg-zinc-950 p-6 rounded-xl flex flex-col md:flex-row items-center justify-between gap-6">
         {/* Search */}
-        <div className="relative w-full md:w-80">
+        <div className="relative w-full md:w-96">
           <Search className="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
@@ -167,7 +167,7 @@ export default function CasesPage() {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredCases.map((c) => (
             <Link
               key={c.id}
@@ -219,82 +219,95 @@ export default function CasesPage() {
         subtitle="Registers a formal case container with assigned jurisdiction and lead officer"
         maxWidth="lg"
       >
-        <form onSubmit={handleCreateSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider font-mono text-zinc-300 mb-1.5">
-              Case / FIR Number (e.g., FIR-2026-DELHI-101) <span className="text-red-400">*</span>
-            </label>
-            <input
-              type="text"
-              value={caseNumber}
-              onChange={(e) => setCaseNumber(e.target.value)}
-              placeholder="FIR-2026-DELHI-101"
-              required
-              className="input-field font-mono"
-            />
+        <form onSubmit={handleCreateSubmit} className="space-y-8">
+          {/* Primary Details Section */}
+          <div className="space-y-6">
+            <h3 className="text-sm font-bold text-zinc-100 border-b border-zinc-800 pb-2">Primary Details</h3>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider font-mono text-zinc-400 mb-1.5">
+                  Case Number <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={caseNumber}
+                  onChange={(e) => setCaseNumber(e.target.value)}
+                  placeholder="FIR-2026-DELHI-101"
+                  required
+                  className="input-field font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider font-mono text-zinc-400 mb-1.5">
+                  Investigation Title <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="e.g., Operation Cyber Vault"
+                  required
+                  className="input-field"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider font-mono text-zinc-400 mb-1.5">
+                Case Summary / Description
+              </label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={3}
+                placeholder="Brief operational context, preliminary allegations, and initial findings..."
+                className="input-field"
+              />
+            </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider font-mono text-zinc-300 mb-1.5">
-              Investigation Title / Subject <span className="text-red-400">*</span>
-            </label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g., Operation Cyber Vault — Data Exfiltration Incident"
-              required
-              className="input-field"
-            />
-          </div>
+          {/* Operational Details Section */}
+          <div className="space-y-6">
+            <h3 className="text-sm font-bold text-zinc-100 border-b border-zinc-800 pb-2">Operational Details</h3>
 
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider font-mono text-zinc-300 mb-1.5">
-              Jurisdiction / Police Station / Division <span className="text-red-400">*</span>
-            </label>
-            <input
-              type="text"
-              value={jurisdiction}
-              onChange={(e) => setJurisdiction(e.target.value)}
-              placeholder="e.g., Delhi NCT Cyber Crime Cell, Special Division"
-              required
-              className="input-field"
-            />
-          </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider font-mono text-zinc-400 mb-1.5">
+                  Jurisdiction <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={jurisdiction}
+                  onChange={(e) => setJurisdiction(e.target.value)}
+                  placeholder="Delhi NCT Cyber Crime Cell"
+                  required
+                  className="input-field"
+                />
+              </div>
 
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider font-mono text-zinc-300 mb-1.5">
-              Lead Investigating Officer <span className="text-red-400">*</span>
-            </label>
-            <select
-              value={leadOfficerId}
-              onChange={(e) => setLeadOfficerId(e.target.value)}
-              required
-              className="select-field"
-            >
-              <option value="">Select lead officer...</option>
-              {users.map((u) => (
-                <option key={u.id} value={u.id} className="bg-zinc-900 text-zinc-100">
-                  {u.fullName} ({u.role.replace('_', ' ')}) [{u.badgeNumber || u.username}]
-                </option>
-              ))}
-            </select>
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider font-mono text-zinc-400 mb-1.5">
+                  Lead Officer <span className="text-red-400">*</span>
+                </label>
+                <select
+                  value={leadOfficerId}
+                  onChange={(e) => setLeadOfficerId(e.target.value)}
+                  required
+                  className="select-field"
+                >
+                  <option value="">Select lead officer...</option>
+                  {users.map((u) => (
+                    <option key={u.id} value={u.id} className="bg-zinc-900 text-zinc-100">
+                      {u.fullName} ({u.role.replace('_', ' ')})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
           </div>
-
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider font-mono text-zinc-300 mb-1.5">
-              Case Summary / Description
-            </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={3}
-              placeholder="Brief operational context, preliminary allegations, and initial findings..."
-              className="input-field"
-            />
-          </div>
-
-          {formError && (
+            {formError && (
             <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs">
               {formError}
             </div>

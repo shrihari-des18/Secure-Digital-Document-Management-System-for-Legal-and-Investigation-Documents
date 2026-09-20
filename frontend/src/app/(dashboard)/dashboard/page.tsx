@@ -99,7 +99,7 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-10">
       {/* Welcome Banner */}
       <div className="border border-zinc-800 bg-zinc-950 p-6 rounded-xl hover:border-zinc-700 hover:bg-zinc-800/20 transition-colors">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -142,7 +142,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
@@ -207,13 +207,9 @@ export default function DashboardPage() {
                     <span className="font-mono text-xs font-bold text-zinc-200 group-hover:text-zinc-100">{c.caseNumber}</span>
                     <CaseStatusBadge status={c.status} />
                   </div>
-                  <h3 className="text-xs font-semibold text-zinc-300 group-hover:text-zinc-100 transition-colors line-clamp-1">
+                  <h3 className="text-sm font-semibold text-zinc-300 group-hover:text-zinc-100 transition-colors line-clamp-1 mt-2">
                     {c.title}
                   </h3>
-                  <div className="flex items-center justify-between text-[11px] text-zinc-500 mt-2 font-mono">
-                    <span className="truncate max-w-[200px]">{c.jurisdiction}</span>
-                    <span>{formatDate(c.createdAt)}</span>
-                  </div>
                 </Link>
               ))
             )}
@@ -221,8 +217,8 @@ export default function DashboardPage() {
         </div>
 
         {/* Recent Evidence */}
-        <div className="border border-zinc-800 bg-zinc-950 p-6 rounded-xl">
-          <div className="flex items-center justify-between pb-4 border-b border-zinc-800">
+        <div className="border border-zinc-800 bg-zinc-950 p-8 rounded-xl">
+          <div className="flex items-center justify-between pb-6 border-b border-zinc-800">
             <h2 className="text-sm font-bold tracking-tight text-zinc-100 flex items-center gap-2">
               <div className="w-7 h-7 rounded-md bg-zinc-100 text-zinc-950 flex items-center justify-center">
                 <FileSearch className="w-3.5 h-3.5" />
@@ -259,21 +255,94 @@ export default function DashboardPage() {
                       <CustodyStateBadge state={ev.custodyState} />
                     </div>
                   </div>
-                  <h3 className="text-xs font-semibold text-zinc-300 group-hover:text-zinc-100 transition-colors line-clamp-1">
+                  <h3 className="text-sm font-semibold text-zinc-300 group-hover:text-zinc-100 transition-colors line-clamp-1 mt-2">
                     {ev.title}
                   </h3>
-                  <div className="flex items-center justify-between text-[11px] text-zinc-500 mt-2 font-mono">
-                    <span className="text-emerald-400">
-                      SHA: {truncateHash(ev.file?.sha256)}
-                    </span>
-                    <span>{formatDate(ev.createdAt)}</span>
-                  </div>
                 </Link>
               ))
             )}
           </div>
         </div>
       </div>
+
+      {/* Quick Access Matrix (Progressive Disclosure) */}
+      <details className="group border border-zinc-800 bg-zinc-950 rounded-xl overflow-hidden">
+        <summary className="p-6 flex items-center justify-between cursor-pointer hover:bg-zinc-900/50 transition-colors">
+          <h2 className="text-sm font-bold tracking-tight text-zinc-100 flex items-center gap-2">
+            <span className="w-7 h-7 rounded-md bg-zinc-100 text-zinc-950 flex items-center justify-center">
+              <Plus className="w-3.5 h-3.5" />
+            </span>
+            Statutory & Operational Workbenches
+          </h2>
+          <span className="text-xs font-semibold text-zinc-400 group-open:text-zinc-100 transition-colors">
+            Toggle View
+          </span>
+        </summary>
+        
+        <div className="p-6 pt-0 border-t border-zinc-800 bg-zinc-950">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6 mt-6">
+            <Link
+              href="/evidence/upload"
+              className="p-6 rounded-lg border border-zinc-800 bg-zinc-900/30 hover:bg-zinc-800/40 hover:border-zinc-700 transition-colors text-center group"
+            >
+              <div className="w-10 h-10 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-300 mx-auto mb-3 group-hover:text-zinc-100">
+                <Plus className="w-5 h-5" />
+              </div>
+              <span className="text-xs font-semibold text-zinc-200 block">Evidence Intake</span>
+            </Link>
+
+            <Link
+              href="/custody"
+              className="p-6 rounded-lg border border-zinc-800 bg-zinc-900/30 hover:bg-zinc-800/40 hover:border-zinc-700 transition-colors text-center group"
+            >
+              <div className="w-10 h-10 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-blue-400 mx-auto mb-3 group-hover:text-blue-300">
+                <Briefcase className="w-5 h-5" />
+              </div>
+              <span className="text-xs font-semibold text-zinc-200 block">Chain of Custody</span>
+            </Link>
+
+            <Link
+              href="/certificates"
+              className="p-6 rounded-lg border border-zinc-800 bg-zinc-900/30 hover:bg-zinc-800/40 hover:border-zinc-700 transition-colors text-center group"
+            >
+              <div className="w-10 h-10 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-emerald-400 mx-auto mb-3 group-hover:text-emerald-300">
+                <Award className="w-5 h-5" />
+              </div>
+              <span className="text-xs font-semibold text-zinc-200 block">BSA §63 Certs</span>
+            </Link>
+
+            <Link
+              href="/documents"
+              className="p-6 rounded-lg border border-zinc-800 bg-zinc-900/30 hover:bg-zinc-800/40 hover:border-zinc-700 transition-colors text-center group"
+            >
+              <div className="w-10 h-10 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-amber-400 mx-auto mb-3 group-hover:text-amber-300">
+                <FileSearch className="w-5 h-5" />
+              </div>
+              <span className="text-xs font-semibold text-zinc-200 block">Legal Documents</span>
+            </Link>
+
+            <Link
+              href="/ledger"
+              className="p-6 rounded-lg border border-zinc-800 bg-zinc-900/30 hover:bg-zinc-800/40 hover:border-zinc-700 transition-colors text-center group"
+            >
+              <div className="w-10 h-10 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-emerald-400 mx-auto mb-3 group-hover:text-emerald-300">
+                <BookOpen className="w-5 h-5" />
+              </div>
+              <span className="text-xs font-semibold text-zinc-200 block">Audit Ledger</span>
+            </Link>
+
+            <Link
+              href="/reports"
+              className="p-6 rounded-lg border border-zinc-800 bg-zinc-900/30 hover:bg-zinc-800/40 hover:border-zinc-700 transition-colors text-center group"
+            >
+              <div className="w-10 h-10 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-blue-400 mx-auto mb-3 group-hover:text-blue-300">
+                <Briefcase className="w-5 h-5" />
+              </div>
+              <span className="text-xs font-semibold text-zinc-200 block">System Reports</span>
+            </Link>
+          </div>
+        </div>
+      </details>
     </div>
   );
 }

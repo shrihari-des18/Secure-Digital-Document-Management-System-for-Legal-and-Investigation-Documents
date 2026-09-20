@@ -183,7 +183,7 @@ export default function CaseDetailPage() {
   const leadUser = allUsers.find((u) => u.id === caseData.leadOfficerId);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Back button */}
       <Link
         href="/cases"
@@ -194,22 +194,22 @@ export default function CaseDetailPage() {
       </Link>
 
       {/* Case Header Card */}
-      <div className="border border-zinc-800 bg-zinc-950 rounded-xl p-6 relative overflow-hidden">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-zinc-800">
+      <div className="border border-zinc-800 bg-zinc-950 rounded-xl p-8 relative overflow-hidden">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-zinc-800">
           <div>
-            <div className="flex items-center gap-3 mb-2">
+            <div className="flex items-center gap-3 mb-3">
               <span className="font-mono text-xs font-bold text-zinc-200 px-2.5 py-0.5 rounded bg-zinc-900 border border-zinc-800">
                 {caseData.caseNumber}
               </span>
               <CaseStatusBadge status={caseData.status} />
             </div>
             <h1 className="text-xl font-bold tracking-tight text-zinc-100">{caseData.title}</h1>
-            <p className="text-xs text-zinc-400 mt-1 leading-relaxed max-w-3xl">
+            <p className="text-xs text-zinc-400 mt-2 leading-relaxed max-w-3xl">
               {caseData.description || 'No description entered for this investigation docket.'}
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
             <button
               onClick={() => setIsCourtBundleOpen(true)}
               className="btn-secondary text-amber-400 border-amber-500/20 hover:border-amber-500/40"
@@ -252,39 +252,45 @@ export default function CaseDetailPage() {
         </div>
 
         {/* Metadata stats row */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-5 text-xs">
-          <div className="flex items-center gap-3 text-zinc-400">
-            <div className="w-8 h-8 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-300">
-              <MapPin className="w-4 h-4" />
+        <details className="group mt-6">
+          <summary className="text-xs font-mono font-semibold text-zinc-400 uppercase tracking-wider cursor-pointer hover:text-zinc-200 transition-colors inline-flex items-center gap-2">
+            <span>View Docket Metadata</span>
+            <span className="group-open:rotate-180 transition-transform">▼</span>
+          </summary>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-4 text-xs">
+            <div className="flex items-center gap-3 text-zinc-400">
+              <div className="w-8 h-8 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-300">
+                <MapPin className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="text-[10px] uppercase font-semibold font-mono text-zinc-500 block">Jurisdiction</span>
+                <span className="text-zinc-200 font-medium">{caseData.jurisdiction}</span>
+              </div>
             </div>
-            <div>
-              <span className="text-[10px] uppercase font-semibold font-mono text-zinc-500 block">Jurisdiction</span>
-              <span className="text-zinc-200 font-medium">{caseData.jurisdiction}</span>
-            </div>
-          </div>
 
-          <div className="flex items-center gap-3 text-zinc-400">
-            <div className="w-8 h-8 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-amber-400">
-              <Users className="w-4 h-4" />
+            <div className="flex items-center gap-3 text-zinc-400">
+              <div className="w-8 h-8 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-amber-400">
+                <Users className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="text-[10px] uppercase font-semibold font-mono text-zinc-500 block">Lead Officer</span>
+                <span className="text-zinc-200 font-medium">
+                  {leadUser ? `${leadUser.fullName} (${leadUser.badgeNumber || 'DL'})` : caseData.leadOfficerId}
+                </span>
+              </div>
             </div>
-            <div>
-              <span className="text-[10px] uppercase font-semibold font-mono text-zinc-500 block">Lead Officer</span>
-              <span className="text-zinc-200 font-medium">
-                {leadUser ? `${leadUser.fullName} (${leadUser.badgeNumber || 'DL'})` : caseData.leadOfficerId}
-              </span>
-            </div>
-          </div>
 
-          <div className="flex items-center gap-3 text-zinc-400">
-            <div className="w-8 h-8 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-emerald-400">
-              <Calendar className="w-4 h-4" />
-            </div>
-            <div>
-              <span className="text-[10px] uppercase font-semibold font-mono text-zinc-500 block">Created Date</span>
-              <span className="text-zinc-200 font-medium font-mono">{formatDate(caseData.createdAt)}</span>
+            <div className="flex items-center gap-3 text-zinc-400">
+              <div className="w-8 h-8 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-emerald-400">
+                <Calendar className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="text-[10px] uppercase font-semibold font-mono text-zinc-500 block">Created Date</span>
+                <span className="text-zinc-200 font-medium font-mono">{formatDate(caseData.createdAt)}</span>
+              </div>
             </div>
           </div>
-        </div>
+        </details>
       </div>
 
       {/* Tabs Switcher */}
@@ -490,7 +496,7 @@ export default function CaseDetailPage() {
         title="Transition Investigation Case Lifecycle"
         subtitle="Update the formal legal status of this docket"
       >
-        <div className="space-y-4">
+        <div className="space-y-6">
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider font-mono text-zinc-300 mb-1.5">
               Select New Status
@@ -547,7 +553,7 @@ export default function CaseDetailPage() {
         title="Edit Case Docket"
         subtitle="Update the metadata for this legal investigation container"
       >
-        <div className="space-y-4">
+        <div className="space-y-6">
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider font-mono text-zinc-300 mb-1.5">
               Investigation Title / Subject

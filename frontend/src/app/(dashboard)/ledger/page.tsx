@@ -51,9 +51,9 @@ export default function LedgerPage() {
   const isChainIntact = verification ? verification.valid : true;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-zinc-100">Cryptographic Audit Ledger</h1>
           <p className="text-xs text-zinc-400 mt-1">
@@ -74,7 +74,7 @@ export default function LedgerPage() {
       {/* Whole-Ledger Cryptographic Verification Banner */}
       <div
         className={clsx(
-          'p-6 rounded-xl border transition-colors',
+          'p-8 rounded-xl border transition-colors',
           isChainIntact
             ? 'bg-zinc-950 border-zinc-800'
             : 'bg-red-500/10 border-red-500/30 text-red-200'
@@ -137,7 +137,7 @@ export default function LedgerPage() {
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="border border-zinc-800 bg-zinc-950 p-4 rounded-xl flex items-center justify-between gap-4">
+      <div className="border border-zinc-800 bg-zinc-950 p-6 rounded-xl flex items-center justify-between gap-6">
         <div className="relative w-full md:w-96">
           <Search className="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input

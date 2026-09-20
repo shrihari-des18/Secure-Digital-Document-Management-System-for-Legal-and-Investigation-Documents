@@ -118,8 +118,8 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-zinc-100">Reporting & Exports</h1>
           <p className="text-xs text-zinc-400 mt-1">
@@ -128,9 +128,9 @@ export default function ReportsPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Cases Export Card */}
-        <div className="border border-zinc-800 bg-zinc-950 p-6 rounded-xl hover:border-zinc-700 transition-colors flex flex-col justify-between">
+        <div className="border border-zinc-800 bg-zinc-950 p-8 rounded-xl hover:border-zinc-700 transition-colors flex flex-col justify-between">
           <div>
             <div className="w-10 h-10 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-300 mb-4">
               <Briefcase className="w-5 h-5" />
@@ -153,7 +153,7 @@ export default function ReportsPage() {
         </div>
 
         {/* Evidence Export Card */}
-        <div className="border border-zinc-800 bg-zinc-950 p-6 rounded-xl hover:border-zinc-700 transition-colors flex flex-col justify-between">
+        <div className="border border-zinc-800 bg-zinc-950 p-8 rounded-xl hover:border-zinc-700 transition-colors flex flex-col justify-between">
           <div>
             <div className="w-10 h-10 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-300 mb-4">
               <FileSearch className="w-5 h-5" />
@@ -176,7 +176,7 @@ export default function ReportsPage() {
         </div>
 
         {/* Users Export Card */}
-        <div className="border border-zinc-800 bg-zinc-950 p-6 rounded-xl hover:border-zinc-700 transition-colors flex flex-col justify-between">
+        <div className="border border-zinc-800 bg-zinc-950 p-8 rounded-xl hover:border-zinc-700 transition-colors flex flex-col justify-between">
           <div>
             <div className="w-10 h-10 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-300 mb-4">
               <Users className="w-5 h-5" />

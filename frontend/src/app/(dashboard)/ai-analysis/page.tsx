@@ -50,9 +50,9 @@ export default function AiAnalysisHubPage() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-zinc-100">AI Forensics & Intelligence Engine</h1>
           <p className="text-xs text-zinc-400 mt-1">
@@ -62,10 +62,10 @@ export default function AiAnalysisHubPage() {
       </div>
 
       {/* Main Two-Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column: Evidence List */}
-        <div className="border border-zinc-800 bg-zinc-950 rounded-xl p-5 space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
+        <div className="border border-zinc-800 bg-zinc-950 rounded-xl p-6 space-y-4">
+          <div className="flex items-center justify-between pb-4 border-b border-zinc-800">
             <h3 className="text-sm font-bold tracking-tight text-zinc-100 flex items-center gap-2">
               <div className="w-6 h-6 rounded bg-zinc-100 text-zinc-950 flex items-center justify-center">
                 <FileSearch className="w-3.5 h-3.5" />
@@ -110,11 +110,11 @@ export default function AiAnalysisHubPage() {
         </div>
 
         {/* Right Column: AI Forensics Panel & PII Redactor Workbench */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-8">
           {activeEvidence ? (
             <>
               {/* Selected Item Summary Bar */}
-              <div className="border border-zinc-800 bg-zinc-950 rounded-xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="border border-zinc-800 bg-zinc-950 rounded-xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <span className="font-mono text-sm font-bold text-zinc-100">{activeEvidence.evidenceNumber}</span>

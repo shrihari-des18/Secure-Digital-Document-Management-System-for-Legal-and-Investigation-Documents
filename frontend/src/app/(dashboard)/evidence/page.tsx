@@ -63,9 +63,9 @@ export default function EvidenceVaultPage() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Top Banner & Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-zinc-100">Digital Evidence Vault</h1>
           <p className="text-xs text-zinc-400 mt-1">
@@ -83,8 +83,8 @@ export default function EvidenceVaultPage() {
       </div>
 
       {/* Search and Filters */}
-      <div className="border border-zinc-800 bg-zinc-950 p-4 rounded-xl space-y-3">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-3">
+      <div className="border border-zinc-800 bg-zinc-950 p-6 rounded-xl space-y-4">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           {/* Search */}
           <div className="relative w-full md:w-96">
             <Search className="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -175,7 +175,7 @@ export default function EvidenceVaultPage() {
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredEvidence.map((ev) => {
             const parentCase = cases.find((c) => c.id === ev.caseId);
 
@@ -202,11 +202,6 @@ export default function EvidenceVaultPage() {
 
                   <div className="flex items-center gap-2 mt-3">
                     <ClassificationBadge level={ev.classification} />
-                    {ev.file?.sizeBytes && (
-                      <span className="text-[11px] font-mono text-zinc-400 px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800">
-                        {formatBytes(ev.file.sizeBytes)}
-                      </span>
-                    )}
                   </div>
                 </div>
 
@@ -215,7 +210,6 @@ export default function EvidenceVaultPage() {
                     <span className="text-[11px] text-emerald-400">
                       SHA: {truncateHash(ev.file?.sha256)}
                     </span>
-                    <span className="text-[11px] text-zinc-500">{formatDate(ev.createdAt)}</span>
                   </div>
 
                   {parentCase && (

@@ -89,9 +89,9 @@ export default function AdminPage() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-zinc-100">System Actors & RBAC Directory</h1>
           <p className="text-xs text-zinc-400 mt-1">
@@ -109,51 +109,57 @@ export default function AdminPage() {
       </div>
 
       {/* Security Engine Specs Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="border border-zinc-800 bg-zinc-950 rounded-xl p-4 flex items-start gap-3">
-          <div className="w-8 h-8 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-300 shrink-0">
-            <Lock className="w-4 h-4" />
+      <details className="group mt-6">
+        <summary className="text-xs font-mono font-semibold text-zinc-400 uppercase tracking-wider cursor-pointer hover:text-zinc-200 transition-colors inline-flex items-center gap-2">
+          <span>View Security Posture & Cryptographic Specs</span>
+          <span className="group-open:rotate-180 transition-transform">▼</span>
+        </summary>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 pt-4">
+          <div className="border border-zinc-800 bg-zinc-950 rounded-xl p-6 flex items-start gap-4">
+            <div className="w-10 h-10 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-300 shrink-0">
+              <Lock className="w-5 h-5" />
+            </div>
+            <div>
+              <span className="text-[11px] text-zinc-500 uppercase font-semibold font-mono block">Authentication</span>
+              <span className="text-sm font-bold text-zinc-200 mt-1 block">HMAC-SHA256 JWT Bearer</span>
+            </div>
           </div>
-          <div>
-            <span className="text-[11px] text-zinc-500 uppercase font-semibold font-mono block">Authentication</span>
-            <span className="text-xs font-bold text-zinc-200">HMAC-SHA256 JWT Bearer</span>
-          </div>
-        </div>
 
-        <div className="border border-zinc-800 bg-zinc-950 rounded-xl p-4 flex items-start gap-3">
-          <div className="w-8 h-8 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-amber-400 shrink-0">
-            <Shield className="w-4 h-4" />
+          <div className="border border-zinc-800 bg-zinc-950 rounded-xl p-6 flex items-start gap-4">
+            <div className="w-10 h-10 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-amber-400 shrink-0">
+              <Shield className="w-5 h-5" />
+            </div>
+            <div>
+              <span className="text-[11px] text-zinc-500 uppercase font-semibold font-mono block">Access Control</span>
+              <span className="text-sm font-bold text-zinc-200 mt-1 block">RBAC + Fine-Grained ABAC</span>
+            </div>
           </div>
-          <div>
-            <span className="text-[11px] text-zinc-500 uppercase font-semibold font-mono block">Access Control</span>
-            <span className="text-xs font-bold text-zinc-200">RBAC + Fine-Grained ABAC</span>
-          </div>
-        </div>
 
-        <div className="border border-zinc-800 bg-zinc-950 rounded-xl p-4 flex items-start gap-3">
-          <div className="w-8 h-8 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-emerald-400 shrink-0">
-            <Key className="w-4 h-4" />
+          <div className="border border-zinc-800 bg-zinc-950 rounded-xl p-6 flex items-start gap-4">
+            <div className="w-10 h-10 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-emerald-400 shrink-0">
+              <Key className="w-5 h-5" />
+            </div>
+            <div>
+              <span className="text-[11px] text-zinc-500 uppercase font-semibold font-mono block">Crypto Authority</span>
+              <span className="text-sm font-bold text-zinc-200 mt-1 block">BouncyCastle ECDSA-P256</span>
+            </div>
           </div>
-          <div>
-            <span className="text-[11px] text-zinc-500 uppercase font-semibold font-mono block">Crypto Authority</span>
-            <span className="text-xs font-bold text-zinc-200">BouncyCastle ECDSA-P256</span>
-          </div>
-        </div>
 
-        <div className="border border-zinc-800 bg-zinc-950 rounded-xl p-4 flex items-start gap-3">
-          <div className="w-8 h-8 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-blue-400 shrink-0">
-            <Database className="w-4 h-4" />
-          </div>
-          <div>
-            <span className="text-[11px] text-zinc-500 uppercase font-semibold font-mono block">Ledger Commit Gate</span>
-            <span className="text-xs font-bold text-zinc-200">Append-Only Hash Chain</span>
+          <div className="border border-zinc-800 bg-zinc-950 rounded-xl p-6 flex items-start gap-4">
+            <div className="w-10 h-10 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-blue-400 shrink-0">
+              <Database className="w-5 h-5" />
+            </div>
+            <div>
+              <span className="text-[11px] text-zinc-500 uppercase font-semibold font-mono block">Ledger Commit Gate</span>
+              <span className="text-sm font-bold text-zinc-200 mt-1 block">Append-Only Hash Chain</span>
+            </div>
           </div>
         </div>
-      </div>
+      </details>
 
       {/* Filter and Search Bar */}
-      <div className="border border-zinc-800 bg-zinc-950 p-4 rounded-xl space-y-3">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-3">
+      <div className="border border-zinc-800 bg-zinc-950 p-6 rounded-xl space-y-4">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="relative w-full md:w-96">
             <Search className="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
@@ -194,7 +200,7 @@ export default function AdminPage() {
           No system users found matching your criteria.
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredUsers.map((u) => {
             const roleColor = ROLE_COLORS[u.role] || 'bg-zinc-900 text-zinc-300 border-zinc-800';
 
@@ -258,8 +264,8 @@ export default function AdminPage() {
         subtitle="Register officer, analyst, prosecutor, or court personnel with RBAC role"
         maxWidth="lg"
       >
-        <form onSubmit={handleRegisterSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <form onSubmit={handleRegisterSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider font-mono text-zinc-300 mb-1.5">
                 Username <span className="text-red-400">*</span>

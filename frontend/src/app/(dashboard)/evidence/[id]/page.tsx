@@ -87,7 +87,7 @@ export default function EvidenceDetailPage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Back button */}
       <div className="flex items-center justify-between">
         <Link
@@ -110,10 +110,10 @@ export default function EvidenceDetailPage() {
       </div>
 
       {/* Header card */}
-      <div className="border border-zinc-800 bg-zinc-950 rounded-xl p-6">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-zinc-800">
+      <div className="border border-zinc-800 bg-zinc-950 rounded-xl p-8">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-zinc-800">
           <div>
-            <div className="flex items-center gap-2.5 mb-2">
+            <div className="flex items-center gap-3 mb-3">
               <span className="font-mono text-xs font-bold text-zinc-200 px-2.5 py-0.5 rounded bg-zinc-900 border border-zinc-800">
                 {evidence.evidenceNumber}
               </span>
@@ -121,7 +121,7 @@ export default function EvidenceDetailPage() {
               <CustodyStateBadge state={evidence.custodyState} />
             </div>
             <h1 className="text-xl font-bold tracking-tight text-zinc-100">{evidence.title}</h1>
-            <p className="text-xs text-zinc-400 mt-1 leading-relaxed max-w-3xl">
+            <p className="text-xs text-zinc-400 mt-2 leading-relaxed max-w-3xl">
               {evidence.description || 'No descriptive context recorded during seizure.'}
             </p>
           </div>
@@ -139,45 +139,51 @@ export default function EvidenceDetailPage() {
         </div>
 
         {/* Device particulars and seizure specs */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-5 text-xs">
-          <div>
-            <span className="text-[10px] uppercase font-semibold font-mono text-zinc-500 block">Hardware Source</span>
-            <span className="text-zinc-200 font-medium mt-0.5 block">
-              {evidence.deviceMake ? `${evidence.deviceMake} ${evidence.deviceModel || ''}` : 'Direct Upload'}
-            </span>
-            {evidence.deviceSerialNumber && (
-              <span className="text-[10px] font-mono text-zinc-500">SN: {evidence.deviceSerialNumber}</span>
-            )}
-          </div>
+        <details className="group mt-6">
+          <summary className="text-xs font-mono font-semibold text-zinc-400 uppercase tracking-wider cursor-pointer hover:text-zinc-200 transition-colors inline-flex items-center gap-2">
+            <span>View Seizure & Hardware Specs</span>
+            <span className="group-open:rotate-180 transition-transform">▼</span>
+          </summary>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 pt-4 text-xs">
+            <div>
+              <span className="text-[10px] uppercase font-semibold font-mono text-zinc-500 block">Hardware Source</span>
+              <span className="text-zinc-200 font-medium mt-0.5 block">
+                {evidence.deviceMake ? `${evidence.deviceMake} ${evidence.deviceModel || ''}` : 'Direct Upload'}
+              </span>
+              {evidence.deviceSerialNumber && (
+                <span className="text-[10px] font-mono text-zinc-500">SN: {evidence.deviceSerialNumber}</span>
+              )}
+            </div>
 
-          <div>
-            <span className="text-[10px] uppercase font-semibold font-mono text-zinc-500 block">Seizure Location</span>
-            <span className="text-zinc-200 font-medium mt-0.5 block truncate">
-              {evidence.seizedLocation || 'Unspecified Jurisdiction'}
-            </span>
-            <span className="text-[10px] text-zinc-500 font-mono">{formatDate(evidence.seizedAt)}</span>
-          </div>
+            <div>
+              <span className="text-[10px] uppercase font-semibold font-mono text-zinc-500 block">Seizure Location</span>
+              <span className="text-zinc-200 font-medium mt-0.5 block truncate">
+                {evidence.seizedLocation || 'Unspecified Jurisdiction'}
+              </span>
+              <span className="text-[10px] text-zinc-500 font-mono">{formatDate(evidence.seizedAt)}</span>
+            </div>
 
-          <div>
-            <span className="text-[10px] uppercase font-semibold font-mono text-zinc-500 block">Binary File Specs</span>
-            <span className="text-zinc-200 font-medium mt-0.5 block truncate font-mono">
-              {evidence.file?.originalFileName || 'raw_data.bin'}
-            </span>
-            <span className="text-[10px] font-mono text-emerald-400">
-              {evidence.file?.sizeBytes ? formatBytes(evidence.file.sizeBytes) : '—'} • {evidence.file?.contentType || 'binary'}
-            </span>
-          </div>
+            <div>
+              <span className="text-[10px] uppercase font-semibold font-mono text-zinc-500 block">Binary File Specs</span>
+              <span className="text-zinc-200 font-medium mt-0.5 block truncate font-mono">
+                {evidence.file?.originalFileName || 'raw_data.bin'}
+              </span>
+              <span className="text-[10px] font-mono text-emerald-400">
+                {evidence.file?.sizeBytes ? formatBytes(evidence.file.sizeBytes) : '—'} • {evidence.file?.contentType || 'binary'}
+              </span>
+            </div>
 
-          <div>
-            <span className="text-[10px] uppercase font-semibold font-mono text-zinc-500 block">Custodian State</span>
-            <span className="text-zinc-200 font-medium mt-0.5 block">
-              {evidence.custodyState.replace('_', ' ')}
-            </span>
-            <span className="text-[10px] font-mono text-zinc-500">
-              ID: {evidence.currentCustodianId || evidence.createdBy}
-            </span>
+            <div>
+              <span className="text-[10px] uppercase font-semibold font-mono text-zinc-500 block">Custodian State</span>
+              <span className="text-zinc-200 font-medium mt-0.5 block">
+                {evidence.custodyState.replace('_', ' ')}
+              </span>
+              <span className="text-[10px] font-mono text-zinc-500">
+                ID: {evidence.currentCustodianId || evidence.createdBy}
+              </span>
+            </div>
           </div>
-        </div>
+        </details>
       </div>
 
       {/* Cryptographic Integrity Card */}

@@ -148,9 +148,9 @@ function DocumentsContent() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Top Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-zinc-100">Versioned Legal Documents</h1>
           <p className="text-xs text-zinc-400 mt-1">
@@ -168,8 +168,8 @@ function DocumentsContent() {
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="border border-zinc-800 bg-zinc-950 p-4 rounded-xl space-y-3">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-3">
+      <div className="border border-zinc-800 bg-zinc-950 p-6 rounded-xl space-y-4">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           {/* Search */}
           <div className="relative w-full md:w-96">
             <Search className="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -242,14 +242,14 @@ function DocumentsContent() {
           </button>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {filteredDocuments.map((doc) => {
             const parentCase = cases.find((c) => c.id === doc.caseId);
 
             return (
               <div
                 key={doc.id}
-                className="border border-zinc-800 bg-zinc-950 hover:border-zinc-700 rounded-xl p-5 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4"
+                className="border border-zinc-800 bg-zinc-950 hover:border-zinc-700 rounded-xl p-6 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-6"
               >
                 <div>
                   <div className="flex flex-wrap items-center gap-2 mb-2">
@@ -340,7 +340,7 @@ function DocumentsContent() {
             e.preventDefault();
             createMutation.mutate();
           }}
-          className="space-y-4"
+          className="space-y-6"
         >
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider font-mono text-zinc-300 mb-1.5">
@@ -470,7 +470,7 @@ function DocumentsContent() {
             e.preventDefault();
             versionMutation.mutate();
           }}
-          className="space-y-4"
+          className="space-y-6"
         >
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider font-mono text-zinc-300 mb-1.5">

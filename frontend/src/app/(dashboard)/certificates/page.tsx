@@ -117,9 +117,9 @@ export default function CertificatesHubPage() {
   const previewCase = previewEvidence ? cases.find((c) => c.id === previewEvidence.caseId) : undefined;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-zinc-100">
             BSA 2023 §63 Court Admissibility Certificates
@@ -139,7 +139,7 @@ export default function CertificatesHubPage() {
       </div>
 
       {/* Search Bar */}
-      <div className="border border-zinc-800 bg-zinc-950 p-4 rounded-xl flex items-center justify-between gap-4">
+      <div className="border border-zinc-800 bg-zinc-950 p-6 rounded-xl flex items-center justify-between gap-6">
         <div className="relative w-full md:w-96">
           <Search className="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
@@ -177,14 +177,14 @@ export default function CertificatesHubPage() {
           </button>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {filteredCertificates.map((cert) => {
             const ev = allEvidence.find((e) => e.id === cert.evidenceId);
 
             return (
               <div
                 key={cert.id}
-                className="border border-zinc-800 bg-zinc-950 hover:border-zinc-700 rounded-xl p-5 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4"
+                className="border border-zinc-800 bg-zinc-950 hover:border-zinc-700 rounded-xl p-6 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-6"
               >
                 <div>
                   <div className="flex flex-wrap items-center gap-2 mb-2">
@@ -264,7 +264,7 @@ export default function CertificatesHubPage() {
             e.preventDefault();
             issueMutation.mutate();
           }}
-          className="space-y-4"
+          className="space-y-6"
         >
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider font-mono text-zinc-300 mb-1.5">
