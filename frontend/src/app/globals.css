@@ -1,0 +1,330 @@
+@import "tailwindcss";
+
+/* ============================================================
+   E-Vault Design System — Zinc Dark Theme Tokens
+   ============================================================ */
+
+@theme {
+  --color-zinc-950: #09090b;
+  --color-zinc-900: #18181b;
+  --color-zinc-800: #27272a;
+  --color-zinc-700: #3f3f46;
+  --color-zinc-600: #52525b;
+  --color-zinc-500: #71717a;
+  --color-zinc-400: #a1a1aa;
+  --color-zinc-300: #d4d4d8;
+  --color-zinc-200: #e4e4e7;
+  --color-zinc-100: #f4f4f5;
+  --color-zinc-50:  #fafafa;
+
+  --color-emerald-500: #10b981;
+  --color-emerald-400: #34d399;
+  --color-red-500:     #ef4444;
+  --color-red-400:     #f87171;
+  --color-amber-500:   #f59e0b;
+  --color-amber-400:   #fbbf24;
+  --color-blue-500:    #3b82f6;
+  --color-blue-400:    #60a5fa;
+
+  /* Aliases for semantic tokens */
+  --color-vault-bg: #09090b;
+  --color-vault-surface: #18181b;
+  --color-vault-card: #09090b;
+  --color-vault-card-hover: #18181b;
+  --color-vault-border: #27272a;
+  --color-vault-border-light: #3f3f46;
+  
+  --color-vault-text: #f4f4f5;
+  --color-vault-text-secondary: #a1a1aa;
+  --color-vault-text-muted: #71717a;
+  
+  --color-vault-primary: #f4f4f5;
+  --color-vault-accent: #3b82f6;
+  --color-vault-success: #10b981;
+  --color-vault-warning: #f59e0b;
+  --color-vault-danger: #ef4444;
+  --color-vault-info: #3b82f6;
+  
+  --color-vault-sidebar: #09090b;
+  --color-vault-topbar: #09090b;
+}
+
+/* ============================================================
+   Global Base Styles
+   ============================================================ */
+
+html {
+  font-size: 18px; /* Scaled up for crisp, readable typography across all displays */
+  background-color: #09090b;
+  color: #f4f4f5;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background-color: #09090b;
+  color: #f4f4f5;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 1rem;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+
+/* Custom minimal scrollbars: track #09090b, thumb #27272a, hover #3f3f46 */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #27272a #09090b;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #09090b;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #27272a;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3f3f46;
+}
+
+/* ============================================================
+   Standard Zinc Dark Card Pattern
+   ============================================================ */
+
+.card-zinc {
+  background-color: #09090b;
+  border: 1px solid #27272a;
+  border-radius: 0.75rem; /* rounded-xl */
+  padding: 1.5rem; /* p-6 */
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-zinc:hover {
+  border-color: #3f3f46;
+  background-color: rgba(39, 39, 42, 0.2); /* hover:bg-zinc-800/20 */
+}
+
+/* Glass Card backward compatibility mapped to Zinc Dark Card */
+.glass-card {
+  background-color: #09090b;
+  border: 1px solid #27272a;
+  border-radius: 0.75rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card-hover:hover {
+  border-color: #3f3f46;
+  background-color: rgba(39, 39, 42, 0.2);
+}
+
+/* ============================================================
+   High-Contrast & Subtle Icon Containers
+   ============================================================ */
+
+/* Primary high-contrast icon block */
+.icon-box-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.5rem;
+  background-color: #f4f4f5;
+  color: #09090b;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* Secondary subtle circular icon container */
+.icon-box-secondary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9999px;
+  background-color: #18181b;
+  border: 1px solid #27272a;
+  color: #d4d4d8;
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   Input & Form Controls
+   ============================================================ */
+
+.input-field {
+  width: 100%;
+  padding: 0.65rem 0.95rem;
+  background-color: rgba(24, 24, 27, 0.6);
+  border: 1px solid #27272a;
+  border-radius: 0.5rem;
+  color: #f4f4f5;
+  font-size: 0.9375rem;
+  transition: all 0.15s ease;
+  outline: none;
+}
+
+.input-field::placeholder {
+  color: #71717a;
+}
+
+.input-field:focus {
+  border-color: #71717a;
+  box-shadow: 0 0 0 1px #71717a;
+}
+
+.input-field:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.select-field {
+  width: 100%;
+  padding: 0.65rem 0.95rem;
+  background-color: rgba(24, 24, 27, 0.6);
+  border: 1px solid #27272a;
+  border-radius: 0.5rem;
+  color: #f4f4f5;
+  font-size: 0.9375rem;
+  transition: all 0.15s ease;
+  outline: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+.select-field:focus {
+  border-color: #71717a;
+  box-shadow: 0 0 0 1px #71717a;
+}
+
+/* ============================================================
+   Buttons
+   ============================================================ */
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1.1rem;
+  background-color: #f4f4f5;
+  color: #09090b;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  border-radius: 0.5rem;
+  border: 1px solid #f4f4f5;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-primary:hover {
+  background-color: #e4e4e7;
+  border-color: #e4e4e7;
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1.1rem;
+  background-color: #18181b;
+  color: #d4d4d8;
+  font-weight: 500;
+  font-size: 0.9375rem;
+  border-radius: 0.5rem;
+  border: 1px solid #27272a;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-secondary:hover {
+  background-color: #27272a;
+  color: #f4f4f5;
+  border-color: #3f3f46;
+}
+
+.btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1.1rem;
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #f87171;
+  font-weight: 500;
+  font-size: 0.9375rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-danger:hover {
+  background-color: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+/* ============================================================
+   Badges
+   ============================================================ */
+
+.badge-zinc {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border-radius: 9999px;
+  border: 1px solid #27272a;
+  background-color: #18181b;
+  color: #d4d4d8;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ============================================================
+   Animations
+   ============================================================ */
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.25s ease-out forwards;
+}
+
+.stagger-children > * {
+  opacity: 0;
+  animation: fadeIn 0.25s ease-out forwards;
+}
+
+.stagger-children > *:nth-child(1) { animation-delay: 0.03s; }
+.stagger-children > *:nth-child(2) { animation-delay: 0.06s; }
+.stagger-children > *:nth-child(3) { animation-delay: 0.09s; }
+.stagger-children > *:nth-child(4) { animation-delay: 0.12s; }
+.stagger-children > *:nth-child(5) { animation-delay: 0.15s; }
+.stagger-children > *:nth-child(6) { animation-delay: 0.18s; }
