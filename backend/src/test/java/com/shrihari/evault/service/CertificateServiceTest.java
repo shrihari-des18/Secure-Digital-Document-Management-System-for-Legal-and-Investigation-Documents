@@ -67,6 +67,9 @@ class CertificateServiceTest {
     @Mock
     private PdfCertificateGenerator pdfCertificateGenerator;
 
+    @Mock
+    private com.shrihari.evault.service.tsa.Rfc3161TimestampService rfc3161TimestampService;
+
     @InjectMocks
     private CertificateService certificateService;
 

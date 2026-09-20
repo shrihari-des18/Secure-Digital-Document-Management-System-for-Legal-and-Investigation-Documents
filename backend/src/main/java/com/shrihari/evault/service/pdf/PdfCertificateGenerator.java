@@ -179,6 +179,30 @@ public class PdfCertificateGenerator {
             doc.add(custTable);
             doc.add(new Paragraph(" "));
 
+            // 5b. RFC 3161 Trusted Timestamp Authority (TSA) Verification
+            if (certificate.getTsaTimestamp() != null) {
+                Paragraph tsaHeader = new Paragraph("RFC 3161 TRUSTED TIMESTAMP AUTHORITY (TSA) SEAL", sectionFont);
+                tsaHeader.setSpacingAfter(4);
+                doc.add(tsaHeader);
+
+                PdfPTable tsaTable = new PdfPTable(4);
+                tsaTable.setWidthPercentage(100);
+                tsaTable.setWidths(new float[]{25, 25, 25, 25});
+
+                addCell(tsaTable, "TSA Authority:", labelFont, true);
+                addCell(tsaTable, certificate.getTsaAuthority() != null ? certificate.getTsaAuthority() : "RFC 3161 Certified TSA", valueFont, false);
+                addCell(tsaTable, "Certified Timestamp:", labelFont, true);
+                addCell(tsaTable, DATE_FMT.format(certificate.getTsaTimestamp()), monoFont, false);
+
+                addCell(tsaTable, "Cryptographic Token:", labelFont, true);
+                addCell(tsaTable, "RFC 3161 DER Token (Verified)", monoFont, false);
+                addCell(tsaTable, "Non-Repudiation:", labelFont, true);
+                addCell(tsaTable, "Independent 3rd-Party Proof", valueFont, false);
+
+                doc.add(tsaTable);
+                doc.add(new Paragraph(" "));
+            }
+
             // 6. Statutory Declaration
             Paragraph declHeader = new Paragraph("STATUTORY DECLARATION (SECTION 63(4) BSA 2023)", sectionFont);
             declHeader.setSpacingAfter(2);

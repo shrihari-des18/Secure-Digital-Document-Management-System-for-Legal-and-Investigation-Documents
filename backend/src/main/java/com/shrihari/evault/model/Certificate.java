@@ -58,4 +58,13 @@ public class Certificate extends BaseEntity {
 
     @Column(name = "signing_key_id", length = 64)
     private String signingKeyId;
+
+    @Column(name = "tsa_token", columnDefinition = "TEXT")
+    private String tsaToken;
+
+    @Column(name = "tsa_timestamp")
+    private Instant tsaTimestamp;
+
+    @Column(name = "tsa_authority", length = 255)
+    private String tsaAuthority;
 }

@@ -53,6 +53,7 @@ public class EvidenceService {
     private final CustodyService custodyService;
     private final AlarmDispatcherService alarmDispatcherService;
     private final EnvelopeEncryptionEngine envelopeEncryptionEngine;
+    private final com.shrihari.evault.service.tsa.Rfc3161TimestampService rfc3161TimestampService;
 
     @Value("${app.crypto.system-secret:SIH26190_CHAIN_OF_CUSTODY_SECRET_KEY_2026}")
     private String systemSecret = "SIH26190_CHAIN_OF_CUSTODY_SECRET_KEY_2026";
@@ -130,7 +131,23 @@ public class EvidenceService {
         byte[] rawDek = envelopeEncryptionEngine.generateDek();
         String wrappedDek = envelopeEncryptionEngine.wrapDek(rawDek);
 
-        // 6. Persist EvidenceFile
+        // 7. Request RFC 3161 Trusted Timestamp Token
+        String tsaToken = null;
+        Instant tsaTimestamp = null;
+        String tsaAuthority = null;
+        if (rfc3161TimestampService != null) {
+            try {
+                var tokenDto = rfc3161TimestampService.timestampHash(serverSha256, "Evidence Intake: " + savedItem.getEvidenceNumber());
+                tsaToken = tokenDto.getTokenBase64();
+                tsaTimestamp = tokenDto.getGenTime();
+                tsaAuthority = tokenDto.getTsaAuthority();
+                log.info("RFC 3161 Timestamp acquired for evidence {}: {}", savedItem.getEvidenceNumber(), tsaTimestamp);
+            } catch (Exception e) {
+                log.warn("RFC 3161 Timestamping failed for evidence {}: {}", savedItem.getEvidenceNumber(), e.getMessage());
+            }
+        }
+
+        // 8. Persist EvidenceFile
         EvidenceFile evidenceFile = EvidenceFile.builder()
                 .evidenceId(savedItem.getId())
                 .originalFileName(file.getOriginalFilename())
@@ -144,21 +161,26 @@ public class EvidenceService {
                 .digitalSignature(digitalSignature)
                 .signingKeyId(envelopeEncryptionEngine.getMasterKeyName())
                 .dekWrapped(wrappedDek)
+                .tsaToken(tsaToken)
+                .tsaTimestamp(tsaTimestamp)
+                .tsaAuthority(tsaAuthority)
                 .build();
 
         EvidenceFile savedFile = evidenceFileRepository.save(evidenceFile);
 
-        // 7. Record Custody Ingestion Event and Chain into Audit Ledger
+        // 9. Record Custody Ingestion Event and Chain into Audit Ledger
+        String custodyNotes = "Initial intake, cryptographic sealing & RFC 3161 TSA timestamp" +
+                (tsaTimestamp != null ? " (" + tsaTimestamp + ")" : "");
         custodyService.recordEvent(
                 savedItem.getId(),
                 CustodyEventType.INGEST,
                 actorId,
                 null,
                 actorId,
-                "Initial intake and cryptographic sealing"
+                custodyNotes
         );
 
-        log.info("Evidence item {} sealed with SHA-256: {}", savedItem.getId(), serverSha256);
+        log.info("Evidence item {} sealed with SHA-256: {} and RFC 3161 TSA", savedItem.getId(), serverSha256);
 
         if (alarmDispatcherService != null) {
             try {

@@ -11,7 +11,7 @@ The E-Vault is designed for legal admissibility and chain-of-custody preservatio
 1. **Backend Core Subsystem (Java 21 LTS / Spring Boot 4.1.1)**: Handles authentication, RBAC/ABAC access control, FIR case dockets, evidence intake, cryptographic hash sealing, S3 WORM storage, Vault KMS envelope encryption, search indexing, append-only audit ledgers, custody tracking, and statutory §63 PDF court certificates.
 2. **AI/ML Microservice Subsystem (Python 3.12 / FastAPI / PaddleOCR)**: Handles document text extraction (OCR), PII entity recognition, bounding box detection, and forensic analysis.
 
-- **Current Build Status**: **58 / 58 Automated Backend Tests Passing** (`mvn test` build success).
+- **Current Build Status**: **67 / 67 Automated Backend Tests Passing** (`mvn test` build success).
 
 ---
 
@@ -44,6 +44,9 @@ The E-Vault is designed for legal admissibility and chain-of-custody preservatio
 │                          │ • Real-time Case Activity feeds (`/topic/case/{id}`).  │
 │                          │ • Auto-triggered alerts on ledger tamper & bit-rot.    │
 │                          │ • Security Alarms REST API with auditor acknowledgment.│
+│                          │ • **RFC 3161 Trusted Timestamp Authority (TSA)**:       │
+│                          │   BouncyCastle client for 3rd-party non-repudiation    │
+│                          │   time tokens on intake hashes and BSA §63 certs.      │
 ├──────────────────────────┼────────────────────────────────────────────────────────┤
 │ **AI/ML (FastAPI)**      │ • Asynchronous FastAPI Uvicorn engine.                 │
 │                          │ • PaddleOCR v3.7+ text & bounding box extraction.      │
@@ -214,8 +217,8 @@ The E-Vault is designed for legal admissibility and chain-of-custody preservatio
 | **BE-COMP-02** | **Backend** | Vault KMS Envelope Encryption Engine | **COMPLETED** | **P0** |
 | **BE-COMP-03** | **Backend** | Hybrid Search Engine Subsystem (`/search`) | **COMPLETED** | **P1** |
 | **BE-COMP-04** | **Backend** | Real-Time WebSockets & Security Alarms | **COMPLETED** | **P1** |
+| **BE-COMP-05** | **Backend** | RFC 3161 Trusted Timestamp Authority (TSA) | **COMPLETED (67/67 Tests Passing)** | **P2** |
 | **BE-01** | **Backend** | Open Policy Agent (OPA) Dynamic ABAC PDP | Pending (Docker Scaffolding Ready) | **P1 (High)** |
-| **BE-02** | **Backend** | RFC 3161 Trusted Timestamp Authority (TSA) | Pending | **P2 (Medium)** |
 | **ML-01** | **AI/ML** | Image Tampering Detection (ELA & EXIF) | **COMPLETED** | **P1 (High)** |
 | **ML-02** | **AI/ML** | Perceptual Hashing (`pHash`) Deduplication | **COMPLETED** | **P1 (High)** |
 | **ML-03** | **AI/ML** | Multi-Class Legal Document Classifier | **COMPLETED** | **P2 (Medium)** |

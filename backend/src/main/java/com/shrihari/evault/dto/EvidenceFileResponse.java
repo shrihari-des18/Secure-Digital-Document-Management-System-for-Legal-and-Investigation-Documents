@@ -26,6 +26,9 @@ public class EvidenceFileResponse {
     private IntegrityStatus integrityStatus;
     private String digitalSignature;
     private String signingKeyId;
+    private String tsaToken;
+    private Instant tsaTimestamp;
+    private String tsaAuthority;
     private Instant createdAt;
 
     public static EvidenceFileResponse fromEntity(EvidenceFile file) {
@@ -43,6 +46,9 @@ public class EvidenceFileResponse {
                 .integrityStatus(file.getIntegrityStatus())
                 .digitalSignature(file.getDigitalSignature())
                 .signingKeyId(file.getSigningKeyId())
+                .tsaToken(file.getTsaToken())
+                .tsaTimestamp(file.getTsaTimestamp())
+                .tsaAuthority(file.getTsaAuthority())
                 .createdAt(file.getCreatedAt())
                 .build();
     }

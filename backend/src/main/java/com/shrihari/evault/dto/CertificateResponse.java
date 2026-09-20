@@ -27,6 +27,9 @@ public class CertificateResponse {
     private Instant issuedAt;
     private String digitalSignature;
     private String signingKeyId;
+    private String tsaToken;
+    private Instant tsaTimestamp;
+    private String tsaAuthority;
 
     public static CertificateResponse fromEntity(Certificate cert) {
         return CertificateResponse.builder()
@@ -42,6 +45,9 @@ public class CertificateResponse {
                 .issuedAt(cert.getIssuedAt())
                 .digitalSignature(cert.getDigitalSignature())
                 .signingKeyId(cert.getSigningKeyId())
+                .tsaToken(cert.getTsaToken())
+                .tsaTimestamp(cert.getTsaTimestamp())
+                .tsaAuthority(cert.getTsaAuthority())
                 .build();
     }
 }

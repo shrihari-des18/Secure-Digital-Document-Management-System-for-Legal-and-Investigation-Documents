@@ -48,6 +48,7 @@ public class CertificateService {
     private final AuditLedgerService auditLedgerService;
     private final StorageService storageService;
     private final PdfCertificateGenerator pdfCertificateGenerator;
+    private final com.shrihari.evault.service.tsa.Rfc3161TimestampService rfc3161TimestampService;
 
     @Value("${app.crypto.system-secret:SIH26190_CHAIN_OF_CUSTODY_SECRET_KEY_2026}")
     private String systemSecret = "SIH26190_CHAIN_OF_CUSTODY_SECRET_KEY_2026";
@@ -93,6 +94,22 @@ public class CertificateService {
                 ? request.getMannerOfProduction()
                 : "Cryptographically acquired via forensic intake protocol in official custody under BSA §63.";
 
+        // Request RFC 3161 Timestamp Token
+        String tsaToken = null;
+        Instant tsaTimestamp = null;
+        String tsaAuthority = null;
+        if (rfc3161TimestampService != null) {
+            try {
+                var tokenDto = rfc3161TimestampService.timestampHash(file.getSha256(), "BSA §63 Certificate: " + certNumber);
+                tsaToken = tokenDto.getTokenBase64();
+                tsaTimestamp = tokenDto.getGenTime();
+                tsaAuthority = tokenDto.getTsaAuthority();
+                log.info("RFC 3161 Timestamp acquired for certificate {}: {}", certNumber, tsaTimestamp);
+            } catch (Exception e) {
+                log.warn("RFC 3161 Timestamping failed for certificate {}: {}", certNumber, e.getMessage());
+            }
+        }
+
         Certificate certificate = Certificate.builder()
                 .evidenceId(evidenceId)
                 .certificateNumber(certNumber)
@@ -106,6 +123,9 @@ public class CertificateService {
                 .issuedAt(issuedAt)
                 .digitalSignature(digitalSignature)
                 .signingKeyId(SIGNING_KEY_ID)
+                .tsaToken(tsaToken)
+                .tsaTimestamp(tsaTimestamp)
+                .tsaAuthority(tsaAuthority)
                 .build();
 
         // Generate PDF

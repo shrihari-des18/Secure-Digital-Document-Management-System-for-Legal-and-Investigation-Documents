@@ -58,6 +58,12 @@ class EvidenceServiceTest {
     @Mock
     private CustodyService custodyService;
 
+    @Mock
+    private AlarmDispatcherService alarmDispatcherService;
+
+    @Mock
+    private com.shrihari.evault.service.tsa.Rfc3161TimestampService rfc3161TimestampService;
+
     @Spy
     private EnvelopeEncryptionEngine envelopeEncryptionEngine = new EnvelopeEncryptionEngine(
             new VaultKmsClientService("http://localhost:8200", "root", "evault-master-kek")

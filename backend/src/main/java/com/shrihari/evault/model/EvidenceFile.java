@@ -11,6 +11,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.Instant;
 import java.util.UUID;
 
 @Entity
@@ -59,4 +60,13 @@ public class EvidenceFile extends BaseEntity {
 
     @Column(name = "dek_wrapped", columnDefinition = "TEXT")
     private String dekWrapped;
+
+    @Column(name = "tsa_token", columnDefinition = "TEXT")
+    private String tsaToken;
+
+    @Column(name = "tsa_timestamp")
+    private Instant tsaTimestamp;
+
+    @Column(name = "tsa_authority", length = 255)
+    private String tsaAuthority;
 }
