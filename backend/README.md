@@ -7,7 +7,7 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16%2B-blue.svg?style=flat-square&logo=postgresql)](https://www.postgresql.org/)
 [![OpenPDF](https://img.shields.io/badge/OpenPDF-2.0.3-yellow.svg?style=flat-square)](https://github.com/LibrePDF/OpenPDF)
 [![OpenAPI 3.0](https://img.shields.io/badge/OpenAPI-3.0%20Swagger-green.svg?style=flat-square&logo=swagger)](http://localhost:8080/swagger-ui/index.html)
-[![Build Status](https://img.shields.io/badge/Build-Passing%20(42%2F42%20Tests)-success.svg?style=flat-square)]()
+[![Build Status](https://img.shields.io/badge/Build-Passing%20(67%2F67%20Tests)-success.svg?style=flat-square)]()
 [![Compliance](https://img.shields.io/badge/Compliance-BSA%202023%20§63-informational.svg?style=flat-square)]()
 
 ---
@@ -52,7 +52,7 @@ flowchart TD
     ActorCtx["ActorContextHolder (ThreadLocal)"]
   end
 
-  subgraph ControllerLayer["REST Controllers (/api/v1)"]
+  subgraph ControllerLayer["REST Controllers (/api/v1) & STOMP"]
     AuthCtrl["AuthController\n(/api/v1/auth)"]
     CaseCtrl["CaseController\n(/api/v1/cases)"]
     EvidCtrl["EvidenceController\n(/api/v1/evidence)"]
@@ -60,6 +60,9 @@ flowchart TD
     LedgCtrl["LedgerController\n(/api/v1/ledger)"]
     DocCtrl["LegalDocumentController\n(/api/v1/documents)"]
     CertCtrl["CertificateController\n(/api/v1/certificates)"]
+    SearchCtrl["SearchController\n(/api/v1/search)"]
+    AlarmCtrl["SecurityAlarmController\n(/api/v1/alarms & STOMP /ws-evault)"]
+    TsCtrl["TimestampController\n(/api/v1/timestamp)"]
     UserCtrl["UserController\n(/api/v1/users)"]
   end
 
@@ -71,12 +74,16 @@ flowchart TD
     LedgSvc["AuditLedgerService (Hash Chain)"]
     DocSvc["LegalDocumentService (Versioning)"]
     CertSvc["CertificateService & PdfCertificateGenerator"]
+    WormSvc["S3WormStorageService (Object Lock COMPLIANCE)"]
+    KmsSvc["EnvelopeEncryptionEngine & VaultKmsClientService"]
+    AlarmSvc["AlarmDispatcherService (Real-Time STOMP Broker)"]
+    TsSvc["Rfc3161TimestampService (BouncyCastle TSP)"]
   end
 
   subgraph PersistenceLayer["Data & File Storage"]
     JPA["Spring Data JPA Repositories"]
     DB[("PostgreSQL / H2 In-Memory DB")]
-    Storage["LocalStorageService\n(Partitioned File Blobs ./data/uploads)"]
+    Storage["LocalStorageService & S3 WORM\n(Partitioned File Blobs ./data/uploads)"]
   end
 
   ClientLayer --> GatewayLayer
@@ -93,8 +100,11 @@ flowchart TD
 |---|---|---|
 | **Runtime & Language** | Java 21 LTS (`Temurin-21`) | Modern Java runtime, Records, Pattern Matching, Sealed Classes |
 | **Framework** | Spring Boot 4.1.1 | Core application framework and autoconfiguration |
-| **Web MVC** | Spring Web MVC | RESTful API controllers and multipart file streaming |
+| **Web MVC & WebSockets** | Spring Web MVC + Spring WebSocket | RESTful API controllers, multipart streaming, STOMP real-time messaging |
 | **Security** | Spring Security 6/7 + JJWT 0.12.6 | Stateless JWT authentication, RBAC, Case-level ABAC |
+| **Cryptographic Timestamping** | BouncyCastle 1.78.1 (`bcpkix` / `bcprov`) | RFC 3161 Time-Stamp Protocol (TSP) for non-repudiation time tokens |
+| **Envelope Encryption** | HashiCorp Vault Transit KMS | AES-256-GCM DEK generation, master KEK wrapping & unwrapping |
+| **Object Storage** | MinIO / AWS S3 WORM | Object Lock COMPLIANCE mode hardware-enforced immutability |
 | **Persistence** | Spring Data JPA + Hibernate ORM 7 | Object-relational mapping, custom repositories, optimistic locking |
 | **Primary Database** | PostgreSQL 16+ | Production relational database (Neon Cloud / Local) |
 | **Test Database** | H2 In-Memory (`MODE=PostgreSQL`) | Zero-dependency, ultra-fast test database |
@@ -433,11 +443,11 @@ backend/
 
 ## 7. Automated Test Suite
 
-The system includes a 100% automated test suite with **42 passing unit and integration tests**:
+The system includes a 100% automated test suite with **67 passing unit and integration tests**:
 
 ```text
 [INFO] Results:
-[INFO] Tests run: 42, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Tests run: 67, Failures: 0, Errors: 0, Skipped: 0
 [INFO] ------------------------------------------------------------------------
 [INFO] BUILD SUCCESS
 [INFO] ------------------------------------------------------------------------
@@ -447,6 +457,12 @@ The system includes a 100% automated test suite with **42 passing unit and integ
 
 | Category | Test Class | Methods Tested | Focus |
 |---|---|:---:|---|
+| **RFC 3161 TSA** | `Rfc3161TimestampServiceTest` | 6 | Standard TSP token minting, local/remote generation, tamper detection on hash change, corrupted token handling |
+| **RFC 3161 TSA** | `TimestampControllerIntegrationTest` | 3 | REST token generation, validation endpoint, end-to-end evidence intake & §63 certificate timestamp verification |
+| **Real-Time WebSockets** | `WebSocketSecurityTest` | 7 | STOMP CONNECT authentication, RBAC on `/topic/security/alarms`, case-level subscription authorization |
+| **Real-Time WebSockets** | `WebSocketAndTamperAlarmIntegrationTest` | 2 | Real bit-rot detection on physical disk, SQL database ledger row tampering detection triggering alarms |
+| **Real-Time WebSockets** | `SecurityAlarmControllerIntegrationTest` | 2 | REST alarms listing, badge count aggregation, auditor acknowledgment, test drill trigger |
+| **Real-Time WebSockets** | `AlarmDispatcherServiceTest` | 5 | Multi-topic dispatching, `Propagation.REQUIRES_NEW` transaction isolation, alarm acknowledgment |
 | **Storage & KMS** | `S3WormStorageServiceTest` | 1 | S3/MinIO Object Lock WORM retention rules, byte retrieval, and local storage fallback |
 | **Storage & KMS** | `EnvelopeEncryptionEngineTest` | 2 | AES-256-GCM payload encryption/decryption roundtrip, Vault DEK wrapping & local master KEK fallback |
 | **Search Subsystem** | `SearchControllerIntegrationTest` | 1 | `GET /api/v1/search` REST integration with query parameters and authentication |
@@ -483,6 +499,7 @@ Run the entire test suite against the in-memory H2 database (zero external setup
 ```bash
 ./mvnw test
 ```
+*(All 67 tests will run and pass).*
 
 ### 2. Run the Application Locally
 To boot up the application:
@@ -503,6 +520,12 @@ Once the backend is running, explore and test the interactive API docs:
 | `server.port` | `8080` | HTTP port for REST API |
 | `spring.datasource.url` | Cloud PostgreSQL URL | JDBC connection URL for primary database |
 | `app.storage.local-dir` | `./data/uploads` | Root directory for raw encrypted evidence and legal document blobs |
+| `app.storage.s3.endpoint` | `http://localhost:9000` | S3 / MinIO WORM Object Storage endpoint |
+| `app.kms.vault.url` | `http://localhost:8200` | HashiCorp Vault Transit KMS server URL |
+| `app.opensearch.url` | `http://localhost:9200` | OpenSearch hybrid search cluster endpoint |
+| `evault.tsa.url` | `https://freetsa.org/tsr` | External RFC 3161 Timestamp Authority endpoint |
+| `evault.tsa.mode` | `AUTO` | `REMOTE`, `LOCAL`, or `AUTO` (remote with graceful local fallback) |
+| `evault.tsa.timeout-ms` | `5000` | RFC 3161 HTTP connection & read timeout in milliseconds |
 | `app.ai.fastapi.url` | `http://localhost:8000` | External FastAPI AI/ML microservice endpoint |
 | `evault.jwt.secret` | Configurable 256-bit secret | HMAC-SHA256 secret key for signing JWT tokens |
 | `evault.jwt.expiration-ms` | `86400000` (24 Hours) | JWT token lifespan in milliseconds |
@@ -512,7 +535,7 @@ Once the backend is running, explore and test the interactive API docs:
 
 ## 9. Completion Summary & Project Status
 
-All **7 planned architectural chunks** for the SIH26190 E-Vault backend are 100% completed, fully integrated, and verified with **38 passing unit and integration tests**:
+All **11 architectural chunks** for the SIH26190 E-Vault backend are 100% completed, fully integrated, and verified with **67 passing unit and integration tests**:
 
 1. ✅ **Chunk 1: Base Infrastructure & Case Subsystem**
 2. ✅ **Chunk 2: Evidence Intake & Cryptographic Storage Subsystem**
@@ -521,4 +544,9 @@ All **7 planned architectural chunks** for the SIH26190 E-Vault backend are 100%
 5. ✅ **Chunk 5: Statutory Evidence Certification (BSA 2023 §63 PDF Engine)**
 6. ✅ **Chunk 6: Security, Auth & RBAC Subsystem**
 7. ✅ **Chunk 7: AI/ML Gateway Integration Subsystem**
+8. ✅ **Chunk 8: MinIO / S3 WORM Object Storage (COMPLIANCE Object Lock)**
+9. ✅ **Chunk 9: HashiCorp Vault KMS Envelope Encryption (AES-256-GCM DEK)**
+10. ✅ **Chunk 10: Real-Time WebSockets & Security Alarm Dispatcher (STOMP)**
+11. ✅ **Chunk 11: RFC 3161 Trusted Timestamp Authority (TSA / BouncyCastle)**
+
 

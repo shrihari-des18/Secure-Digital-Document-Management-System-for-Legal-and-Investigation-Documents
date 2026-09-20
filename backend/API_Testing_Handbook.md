@@ -331,3 +331,201 @@ This handbook provides an end-to-end testing workflow for the **Secure Digital E
   - `size` (int, optional): Page size (default `10`).
 - **Request Body**: None
 
+---
+
+## 9. Real-Time WebSockets & Security Alarms Subsystem (`/api/v1/alarms` & STOMP `/ws-evault`)
+
+The E-Vault provides enterprise-grade, bi-directional real-time push capabilities over WebSockets using the STOMP protocol (with SockJS fallback). It features strict JWT authentication, role-based topic subscription guards, and automated alarm dispatching upon physical bit-rot, audit tamper, or chain of custody deviations.
+
+### 9.1 WebSocket & STOMP Protocol Connection Guide
+- **Native WebSocket Endpoint**: `ws://localhost:8080/ws-evault` or `ws://localhost:8080/ws`
+- **SockJS Fallback Endpoint**: `http://localhost:8080/ws-evault` or `http://localhost:8080/ws`
+- **Authentication**:
+  - Handshake Query Parameter: `ws://localhost:8080/ws-evault?token=<JWT_TOKEN>`
+  - Or STOMP `CONNECT` Frame Header: `Authorization: Bearer <JWT_TOKEN>`
+- **Subscribable Broker Topics**:
+  - `/topic/security/alarms`: Dedicated broadcast channel for security officers and auditors. Restricted to `SYSTEM_ADMIN` and `AUDITOR` roles. Emits alerts on physical disk bit-rot (SHA-256 mismatches), ledger sequence breaks, hash tampering, suspicious custody transfers, and unauthorized access attempts.
+  - `/topic/case/{caseId}`: Live activity and timeline event stream for a specific case docket. Broadcasts evidence intake, custody transfers, legal document revisions, case status changes, and AI analysis events.
+  - `/user/queue/notifications`: Point-to-point user notifications channel.
+
+#### JavaScript / Web Browser STOMP Example
+```javascript
+import { Client } from '@stomp/stompjs';
+
+const client = new Client({
+  brokerURL: 'ws://localhost:8080/ws-evault?token=' + jwtToken,
+  connectHeaders: {
+    Authorization: 'Bearer ' + jwtToken
+  },
+  onConnect: () => {
+    console.log('Connected to E-Vault STOMP Broker');
+
+    // Subscribe to Security Alarms (Restricted to SYSTEM_ADMIN & AUDITOR)
+    client.subscribe('/topic/security/alarms', (message) => {
+      const alarm = JSON.parse(message.body);
+      console.warn('🚨 SECURITY ALARM RECEIVED:', alarm);
+    });
+
+    // Subscribe to Case Docket Activity Timeline
+    client.subscribe('/topic/case/' + caseId, (message) => {
+      const event = JSON.parse(message.body);
+      console.log('📁 CASE ACTIVITY UPDATE:', event);
+    });
+  }
+});
+
+client.activate();
+```
+
+---
+
+### Step 9.2: List Security Alarms
+- **Endpoint**: `GET /api/v1/alarms`
+- **Description**: Retrieves real-time security alerts and tamper alarm records filtered by status, severity, or case ID.
+- **Headers**: `Authorization: Bearer <YOUR_JWT_TOKEN>`
+- **Permitted Roles**: `SYSTEM_ADMIN`, `AUDITOR`
+- **Query Parameters**:
+  - `unacknowledgedOnly` (boolean, optional): Set to `true` to list only pending alarms requiring auditor attention.
+  - `severity` (string, optional): Filter by severity level: `INFO`, `LOW`, `MEDIUM`, `HIGH`, `CRITICAL`.
+  - `caseId` (UUID, optional): Filter alarms tied to a specific case docket.
+- **Request Body**: None
+
+---
+
+### Step 9.3: Count Unacknowledged Security Alarms (Badge Indicator)
+- **Endpoint**: `GET /api/v1/alarms/unacknowledged-count`
+- **Description**: Returns the total count of unacknowledged alarms. Designed for high-performance notification badges and dashboard alert indicators.
+- **Headers**: `Authorization: Bearer <YOUR_JWT_TOKEN>`
+- **Permitted Roles**: `SYSTEM_ADMIN`, `AUDITOR`
+- **Request Body**: None
+
+---
+
+### Step 9.4: Retrieve Security Alarm by ID
+- **Endpoint**: `GET /api/v1/alarms/{id}`
+- **Description**: Retrieves full details of a specific security alarm, including full diagnostic payload and audit metadata.
+- **Headers**: `Authorization: Bearer <YOUR_JWT_TOKEN>`
+- **Permitted Roles**: `SYSTEM_ADMIN`, `AUDITOR`
+- **Request Body**: None
+
+---
+
+### Step 9.5: Acknowledge Security Alarm
+- **Endpoint**: `POST /api/v1/alarms/{id}/acknowledge`
+- **Description**: Marks a security alarm as acknowledged by the current auditor or security administrator, binding their user ID and timestamp to the record.
+- **Headers**: `Authorization: Bearer <YOUR_JWT_TOKEN>`
+- **Permitted Roles**: `SYSTEM_ADMIN`, `AUDITOR`
+- **Request Body**: None
+
+---
+
+### Step 9.6: Trigger Simulated Security Drill Alarm
+- **Endpoint**: `POST /api/v1/alarms/test-trigger`
+- **Description**: Simulates a security incident or drill by broadcasting an alarm over `/topic/security/alarms` and persisting the incident to the database.
+- **Headers**: `Authorization: Bearer <YOUR_JWT_TOKEN>`, `Content-Type: application/json`
+- **Permitted Roles**: `SYSTEM_ADMIN`
+
+**JSON Request Body**:
+```json
+{
+  "alarmType": "HASH_MISMATCH",
+  "severity": "CRITICAL",
+  "resourceRef": "EVIDENCE-d3b07384-9021-4509",
+  "message": "CRITICAL: Physical file bit-rot or unauthorized modification detected for sealed evidence file",
+  "details": {
+    "expectedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "computedSha256": "cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce",
+    "facility": "Primary WORM Storage Vault"
+  },
+  "caseId": "<CASE_ID>"
+}
+```
+> Supported `alarmType` values: `TAMPER_DETECTED`, `HASH_MISMATCH`, `UNAUTHORIZED_ACCESS_ATTEMPT`, `SEQUENCE_BREAK`, `SUSPICIOUS_CUSTODY_TRANSFER`, `SECURITY_DRILL`.
+
+---
+
+## 10. RFC 3161 Trusted Timestamp Authority (TSA) Subsystem (`/api/v1/timestamp`)
+
+The RFC 3161 Trusted Timestamp Authority integration provides mathematically irrefutable proof that a digital artifact existed in an exact state at a specific point in time prior to timestamp generation. In compliance with **Bharatiya Sakshya Adhiniyam, 2023 (§63)**, all evidence intake hashes and Section 63 court certificates are sealed with signed X.509 cryptographic Time-Stamp Tokens (TST) via BouncyCastle (`org.bouncycastle.tsp`).
+
+---
+
+### Step 10.1: Generate RFC 3161 Timestamp Token for SHA-256 Hash
+- **Endpoint**: `POST /api/v1/timestamp/stamp-hash`
+- **Description**: Submits an arbitrary 64-character hexadecimal SHA-256 digest to the RFC 3161 TSA and receives a certified, signed ASN.1 Time-Stamp Token (Base64-encoded) with non-repudiation metadata.
+- **Headers**: `Authorization: Bearer <YOUR_JWT_TOKEN>`, `Content-Type: application/json`
+- **Permitted Roles**: `INVESTIGATING_OFFICER`, `FORENSIC_ANALYST`, `SYSTEM_ADMIN`, `AUDITOR`, `COURT`, `PROSECUTOR`, `RECORDS_CUSTODIAN`
+
+**JSON Request Body**:
+```json
+{
+  "sha256": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+  "description": "Seizure Memo Forensic Digital Evidence Seal"
+}
+```
+
+**Example JSON Response**:
+```json
+{
+  "success": true,
+  "message": "RFC 3161 Timestamp Token generated successfully",
+  "data": {
+    "tokenBase64": "MIIFtAYJKoZIhvcNAQcCoIIFpTCCBaECAQMx...",
+    "genTime": "2026-09-20T11:25:30Z",
+    "tsaName": "CN=FreeTSA, OU=FreeTSA TSA, O=FreeTSA, C=DE",
+    "serialNumber": "1726831530123456",
+    "policyOid": "1.3.6.1.4.1.4146.2.2",
+    "hashAlgorithm": "2.16.840.1.101.3.4.2.1",
+    "imprintHash": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
+  }
+}
+```
+
+---
+
+### Step 10.2: Cryptographically Verify RFC 3161 Timestamp Token
+- **Endpoint**: `POST /api/v1/timestamp/verify`
+- **Description**: Verifies the mathematical validity of a Base64-encoded RFC 3161 Time-Stamp Token against an expected SHA-256 hash. Validates cryptographic signature, TSA certificate chain, and message digest imprint.
+- **Headers**: `Authorization: Bearer <YOUR_JWT_TOKEN>`, `Content-Type: application/json`
+
+**JSON Request Body**:
+```json
+{
+  "tokenBase64": "<PASTE_BASE64_TOKEN_HERE>",
+  "expectedSha256": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
+}
+```
+
+**Example JSON Response**:
+```json
+{
+  "success": true,
+  "message": "Operation successful",
+  "data": {
+    "valid": true,
+    "hashMatches": true,
+    "signatureVerified": true,
+    "genTime": "2026-09-20T11:25:30Z",
+    "tsaName": "CN=FreeTSA, OU=FreeTSA TSA, O=FreeTSA, C=DE",
+    "serialNumber": "1726831530123456",
+    "message": "RFC 3161 Timestamp Token is cryptographically valid and matches the expected SHA-256 hash"
+  }
+}
+```
+
+---
+
+### Step 10.3: Inspect & Verify Evidence Intake Timestamp
+- **Endpoint**: `GET /api/v1/timestamp/evidence/{evidenceId}`
+- **Description**: Retrieves the RFC 3161 timestamp token recorded during evidence ingestion and automatically cross-verifies it against the current evidence file SHA-256 hash.
+- **Headers**: `Authorization: Bearer <YOUR_JWT_TOKEN>`
+- **Request Body**: None
+
+---
+
+### Step 10.4: Inspect & Verify BSA §63 Certificate Timestamp
+- **Endpoint**: `GET /api/v1/timestamp/certificate/{certificateId}`
+- **Description**: Retrieves the RFC 3161 timestamp token generated during BSA §63 court certificate generation and verifies that the certificate's hash snapshot matches the trusted timestamp.
+- **Headers**: `Authorization: Bearer <YOUR_JWT_TOKEN>`
+- **Request Body**: None
+

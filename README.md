@@ -9,7 +9,7 @@
 [![PaddleOCR](https://img.shields.io/badge/PaddleOCR-v3.7%2B-008080.svg?style=flat-square)](https://github.com/PaddlePaddle/PaddleOCR)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16%2B-blue.svg?style=flat-square&logo=postgresql)](https://www.postgresql.org/)
 [![OpenPDF](https://img.shields.io/badge/OpenPDF-2.0.3-yellow.svg?style=flat-square)](https://github.com/LibrePDF/OpenPDF)
-[![Build Status](https://img.shields.io/badge/Build-Passing%20(42%2F42%20Tests)-success.svg?style=flat-square)]()
+[![Build Status](https://img.shields.io/badge/Build-Passing%20(67%2F67%20Tests)-success.svg?style=flat-square)]()
 [![Compliance](https://img.shields.io/badge/Compliance-BSA%202023%20§63-informational.svg?style=flat-square)]()
 
 ---
@@ -100,6 +100,8 @@ Rather than acting as a simple cloud file drive, the E-Vault treats every file a
 | **WORM Object Storage** | MinIO / AWS S3 | S3 API | Object Lock COMPLIANCE retention mode (Write-Once-Read-Many) |
 | **Key Management (KMS)** | HashiCorp Vault | Transit Engine | Envelope encryption, master KEK wrapping & unwrapping of per-file DEKs |
 | **Search Engine** | Hybrid OpenSearch | REST Client | Lexical BM25 & dense vector k-NN similarity search over OCR text |
+| **RFC 3161 Timestamping (TSA)** | BouncyCastle (`bcprov` / `bcpkix`) | 1.78.1 | Cryptographic 3rd-party non-repudiation timestamps on evidence & certificates |
+| **Real-Time WebSockets** | Spring WebSocket + STOMP | 4.1.1 | Instant security alarm broadcasting and case activity streams |
 
 ---
 
@@ -353,6 +355,21 @@ Base URL: `http://localhost:8080/api/v1`
 ### 8.8 Search Engine (`/search`)
 - `GET /api/v1/search?query={term}&type={ALL|CASE|EVIDENCE|DOCUMENT}` — Execute hybrid search.
 
+### 8.9 Real-Time WebSockets & Security Alarms (`/alarms` & `/ws-evault`)
+- `WS /ws-evault` / `/ws` — STOMP WebSocket connection endpoint (SockJS fallback + JWT authentication).
+- `SUB /topic/security/alarms` — Real-time security alarms feed (Restricted to `SYSTEM_ADMIN` & `AUDITOR`).
+- `SUB /topic/case/{id}` — Real-time docket activity events for assigned case.
+- `GET /api/v1/alarms` — List security alarms (filterable by acknowledgment status).
+- `GET /api/v1/alarms/count-unacknowledged` — Unacknowledged alarm badge count.
+- `POST /api/v1/alarms/{id}/acknowledge` — Acknowledge an active security alarm (`AUDITOR` / `SYSTEM_ADMIN`).
+- `POST /api/v1/alarms/trigger-test` — Trigger security drill alarm for auditor testing.
+
+### 8.10 RFC 3161 Trusted Timestamp Authority (`/timestamp`)
+- `POST /api/v1/timestamp/stamp-hash` — Generate certified RFC 3161 Time-Stamp Token (TST) for SHA-256 hash.
+- `POST /api/v1/timestamp/verify` — Cryptographically verify Base64 RFC 3161 token against expected hash.
+- `GET /api/v1/timestamp/evidence/{id}` — Retrieve and verify RFC 3161 token recorded during evidence intake.
+- `GET /api/v1/timestamp/certificate/{id}` — Retrieve and verify RFC 3161 token recorded on BSA §63 certificate.
+
 ---
 
 ## 9. Local Setup & Execution Guide
@@ -368,7 +385,7 @@ Base URL: `http://localhost:8080/api/v1`
 cd backend
 ./mvnw clean test
 ```
-*(All 42 tests will run and pass).*
+*(All 67 tests will run and pass).*
 
 ### Step 2: Start Backend Application
 ```bash
