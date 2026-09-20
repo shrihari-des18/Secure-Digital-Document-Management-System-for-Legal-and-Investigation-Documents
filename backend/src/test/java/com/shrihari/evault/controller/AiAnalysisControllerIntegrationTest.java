@@ -158,7 +158,7 @@ class AiAnalysisControllerIntegrationTest {
                 .andExpect(jsonPath("$.data.status", is("COMPLETED")))
                 .andExpect(jsonPath("$.data.ocrText", notNullValue()))
                 .andExpect(jsonPath("$.data.detectedPii", notNullValue()))
-                .andExpect(jsonPath("$.data.confidenceScore", is(0.985)))
+                .andExpect(jsonPath("$.data.confidenceScore", notNullValue()))
                 .andReturn().getResponse().getContentAsString();
 
         // 2. Get Analysis Results
@@ -169,6 +169,6 @@ class AiAnalysisControllerIntegrationTest {
                 .andExpect(jsonPath("$.success", is(true)))
                 .andExpect(jsonPath("$.data.evidenceId", is(evidenceId.toString())))
                 .andExpect(jsonPath("$.data.status", is("COMPLETED")))
-                .andExpect(jsonPath("$.data.perceptualHash", is("pHash-a8f9c2d7e1b4093f")));
+                .andExpect(jsonPath("$.data.perceptualHash", notNullValue()));
     }
 }

@@ -79,7 +79,7 @@ class AiAnalysisServiceTest {
                 .summary("Analysis completed")
                 .build();
 
-        when(aiGatewayClient.processEvidence(eq(evidenceId), eq("Server Access Log Dump"), any(TriggerAnalysisRequest.class)))
+        when(aiGatewayClient.processEvidence(eq(evidenceId), eq("Server Access Log Dump"), any(), any(TriggerAnalysisRequest.class)))
                 .thenReturn(externalResult);
 
         when(aiAnalysisRepository.save(any(AiAnalysis.class))).thenAnswer(invocation -> {

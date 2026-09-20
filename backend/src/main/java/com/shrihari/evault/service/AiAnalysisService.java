@@ -10,9 +10,12 @@ import com.shrihari.evault.model.AiAnalysis;
 import com.shrihari.evault.model.AnalysisStatus;
 import com.shrihari.evault.model.CustodyEventType;
 import com.shrihari.evault.model.EvidenceItem;
+import com.shrihari.evault.model.EvidenceFile;
 import com.shrihari.evault.repository.AiAnalysisRepository;
+import com.shrihari.evault.repository.EvidenceFileRepository;
 import com.shrihari.evault.repository.EvidenceItemRepository;
 import com.shrihari.evault.service.ai.AiGatewayClient;
+import com.shrihari.evault.service.storage.StorageService;
 import com.shrihari.evault.model.CaseActivityType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -29,6 +33,8 @@ public class AiAnalysisService {
 
     private final AiAnalysisRepository aiAnalysisRepository;
     private final EvidenceItemRepository evidenceItemRepository;
+    private final EvidenceFileRepository evidenceFileRepository;
+    private final StorageService storageService;
     private final AiGatewayClient aiGatewayClient;
     private final CustodyService custodyService;
     private final AuditLedgerService auditLedgerService;
@@ -55,7 +61,23 @@ public class AiAnalysisService {
         aiAnalysisRepository.save(analysis);
 
         String nameToProcess = evidence.getTitle() != null ? evidence.getTitle() : evidence.getEvidenceNumber();
-        ExternalAiAnalysisResult result = aiGatewayClient.processEvidence(evidenceId, nameToProcess, request);
+        byte[] fileBytes = null;
+        if (evidenceFileRepository != null && storageService != null) {
+            Optional<EvidenceFile> fileOpt = evidenceFileRepository.findByEvidenceId(evidenceId);
+            if (fileOpt.isPresent()) {
+                EvidenceFile evFile = fileOpt.get();
+                if (evFile.getOriginalFileName() != null && !evFile.getOriginalFileName().isBlank()) {
+                    nameToProcess = evFile.getOriginalFileName();
+                }
+                try {
+                    fileBytes = storageService.loadAsBytes(evFile.getStoragePath());
+                } catch (Exception e) {
+                    log.warn("Could not load evidence file bytes from storage path: {}", evFile.getStoragePath(), e);
+                }
+            }
+        }
+
+        ExternalAiAnalysisResult result = aiGatewayClient.processEvidence(evidenceId, nameToProcess, fileBytes, request);
 
         ActorContext actor = ActorContextHolder.get();
         UUID actorId = (actor != null && actor.getActorId() != null) ? actor.getActorId() : evidence.getCreatedBy();
