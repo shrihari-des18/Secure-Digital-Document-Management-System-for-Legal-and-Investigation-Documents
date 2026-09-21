@@ -14,87 +14,253 @@
 
 ## 1. Executive Summary & Legal Statutory Context
 
-The **Secure Digital Evidence and Legal Document Management System (E-Vault)** is a mission-critical backend designed to secure the integrity, custody, and lifecycle of digital evidence and case files for police departments, forensic laboratories, prosecutors, and judicial courts across India.
+The **Secure Digital Evidence and Legal Document Management System (E-Vault)** is an enterprise-grade backend designed to secure the integrity, chain of custody, and statutory admissibility of digital evidence and legal case files for law enforcement agencies, digital forensic laboratories, prosecutors, and judicial courts across India.
 
-### The Problem
-In criminal investigations, digital evidence (CCTV footage, hard drive images, seized smartphones, call detail records) is vulnerable to:
-1. **Chain-of-Custody Ambiguity**: Lack of an indisputable record of who possessed, viewed, transferred, or analyzed evidence.
-2. **Silent File Tampering / Bit Rot**: Unnoticed manipulation or accidental alteration of evidence files on physical disk.
-3. **Statutory Admissibility Rejection**: Electronic records being thrown out of court due to non-compliance with statutory certificate requirements.
+### The Core Problem
+In modern criminal investigations, digital evidence (CCTV footage, hard drive bit-stream images, seized smartphones, financial server logs, CDRs) faces three critical risks:
+1. **Chain-of-Custody Ambiguity**: Lack of an immutable, cryptographically signed log showing who possessed, transferred, analyzed, or accessed evidence.
+2. **Silent File Alteration & Bit-Rot**: Unnoticed bit degradation or malicious tampering on physical disks or cloud storage.
+3. **Statutory Admissibility Rejection**: Discarding of critical digital evidence by courts due to non-compliance with statutory certification mandates.
 
-### Statutory Admissibility under Bharatiya Sakshya Adhiniyam, 2023 (§63)
-Effective July 1, 2024, the Indian Parliament enacted the **Bharatiya Sakshya Adhiniyam, 2023 (BSA)**, replacing the Indian Evidence Act, 1872. Section 63 governs the **Admissibility of Electronic Records** (superseding the former Section 65B):
-- **§63(2)** establishes the conditions under which computer output is deemed an admissible document.
-- **§63(4)** mandates that a statutory certificate be produced containing:
-  - Identification of the electronic record and device particulars (make, model, serial number).
-  - Manner of production and custody details by the officer in charge.
-  - Cryptographic hash snapshots ensuring the record has not been altered or tampered with.
-  - Digital or physical signatures of the certifying officer.
+### Statutory Compliance: Bharatiya Sakshya Adhiniyam, 2023 (§63)
+Effective July 1, 2024, the Parliament of India enacted the **Bharatiya Sakshya Adhiniyam, 2023 (BSA)**, replacing the Indian Evidence Act, 1872. Section 63 governs the **Admissibility of Electronic Records** (superseding former Section 65B):
+- **§63(2)** establishes statutory requirements for computer output admissibility.
+- **§63(4)** mandates an official statutory certificate containing:
+  - Device particulars (make, model, serial number) and location of seizure.
+  - Manner of production and custody trail held by the officer in charge.
+  - Dual cryptographic hash snapshots (SHA-256 & SHA-512) ensuring non-tampering.
+  - Digital signatures of the certifying officer and automated digital verification seals.
 
-This backend provides a **cryptographically verifiable, automated implementation of Section 63 BSA**, generating Schedule-compliant court certificates as digitally signed PDFs while maintaining an immutable hash-chained audit ledger.
+This platform automates **Section 63 BSA compliance**, generating Schedule-compliant court certificate PDFs while enforcing an append-only, hash-chained audit ledger.
 
 ---
 
-## 2. System Architecture
+## 2. System Architecture & Component Interactions
 
 The backend follows an enterprise layered architecture strictly adhering to the Single Responsibility Principle:
 
 ```mermaid
 flowchart TD
-  subgraph ClientLayer["Client & Investigation Portal"]
-    WebClient["Web / Mobile Portal (React / Flutter)"]
-    CourtClient["Court Docket System (e-Courts API)"]
+  subgraph ClientLayer["1. Client & Integration Portal"]
+    WebClient["Web Application (React / Next.js)"]
+    MobileApp["Mobile Field Acquisition Unit"]
+    eCourts["e-Courts Judicial Interface API"]
   end
 
-  subgraph GatewayLayer["Gateway & Security Perimeter"]
-    SecFilter["Spring Security Filter Chain\n(CORS, CSRF Disabled, Stateless)"]
+  subgraph GatewayLayer["2. Security & Gateway Perimeter"]
+    SecFilter["Spring Security Filter Chain\n(Stateless, CORS, CSRF Disabled)"]
     JwtAuth["JwtAuthenticationFilter\n(HMAC-SHA256 Token Validation)"]
-    ActorCtx["ActorContextHolder (ThreadLocal)"]
+    ActorCtx["ActorContextHolder\n(ThreadLocal Identity Bridge)"]
   end
 
-  subgraph ControllerLayer["REST Controllers (/api/v1) & STOMP"]
-    AuthCtrl["AuthController\n(/api/v1/auth)"]
-    CaseCtrl["CaseController\n(/api/v1/cases)"]
-    EvidCtrl["EvidenceController\n(/api/v1/evidence)"]
-    CustCtrl["CustodyController\n(/api/v1/evidence/{id}/custody)"]
-    LedgCtrl["LedgerController\n(/api/v1/ledger)"]
-    DocCtrl["LegalDocumentController\n(/api/v1/documents)"]
-    CertCtrl["CertificateController\n(/api/v1/certificates)"]
-    SearchCtrl["SearchController\n(/api/v1/search)"]
-    AlarmCtrl["SecurityAlarmController\n(/api/v1/alarms & STOMP /ws-evault)"]
-    TsCtrl["TimestampController\n(/api/v1/timestamp)"]
-    UserCtrl["UserController\n(/api/v1/users)"]
+  subgraph ControllerLayer["3. REST API Controllers (/api/v1) & STOMP"]
+    AuthCtrl["AuthController\n(/auth)"]
+    CaseCtrl["CaseController\n(/cases)"]
+    EvidCtrl["EvidenceController\n(/evidence)"]
+    CustCtrl["CustodyController\n(/evidence/{id}/custody)"]
+    LedgCtrl["LedgerController\n(/ledger)"]
+    DocCtrl["LegalDocumentController\n(/documents)"]
+    CertCtrl["CertificateController\n(/certificates)"]
+    SearchCtrl["SearchController\n(/search)"]
+    AlarmCtrl["SecurityAlarmController\n(/alarms & STOMP /ws-evault)"]
+    TsCtrl["TimestampController\n(/timestamp)"]
+    UserCtrl["UserController\n(/users)"]
   end
 
-  subgraph ServiceLayer["Business Logic & Cryptographic Engine"]
+  subgraph ServiceLayer["4. Core Service & Cryptographic Engine"]
     AuthSvc["AuthService & CustomUserDetailsService"]
     CaseSvc["CaseService & CaseSecurityService (ABAC)"]
     EvidSvc["EvidenceService & CryptoUtil (SHA-256/512)"]
-    CustSvc["CustodyService"]
+    CustSvc["CustodyService (HMAC Timeline)"]
     LedgSvc["AuditLedgerService (Hash Chain)"]
     DocSvc["LegalDocumentService (Versioning)"]
     CertSvc["CertificateService & PdfCertificateGenerator"]
     WormSvc["S3WormStorageService (Object Lock COMPLIANCE)"]
     KmsSvc["EnvelopeEncryptionEngine & VaultKmsClientService"]
-    AlarmSvc["AlarmDispatcherService (Real-Time STOMP Broker)"]
+    AlarmSvc["AlarmDispatcherService (STOMP Broker)"]
     TsSvc["Rfc3161TimestampService (BouncyCastle TSP)"]
+    SearchSvc["OpenSearchClientService (Hybrid Search)"]
   end
 
-  subgraph PersistenceLayer["Data & File Storage"]
+  subgraph ExternalLayer["5. External Microservices & Services"]
+    FastApiML["Python FastAPI AI/ML Microservice\n(PaddleOCR, spaCy PII, pHash)"]
+    VaultKMS["HashiCorp Vault Transit Engine\n(Master KEK Management)"]
+    TsaRemote["RFC 3161 Time-Stamp Authority (TSA)"]
+  end
+
+  subgraph PersistenceLayer["6. Data & File Storage Tier"]
     JPA["Spring Data JPA Repositories"]
-    DB[("PostgreSQL / H2 In-Memory DB")]
-    Storage["LocalStorageService & S3 WORM\n(Partitioned File Blobs ./data/uploads)"]
+    PostgresDB[("PostgreSQL / H2 In-Memory DB")]
+    OpenSearchCluster[("OpenSearch Hybrid Index")]
+    ObjectStore[("Partitioned Blobs / MinIO / S3 WORM\n(./data/uploads)")]
   end
 
   ClientLayer --> GatewayLayer
   GatewayLayer --> ControllerLayer
   ControllerLayer --> ServiceLayer
+  ServiceLayer --> ExternalLayer
   ServiceLayer --> PersistenceLayer
 ```
 
 ---
 
-## 3. Technology Stack
+## 3. End-to-End System Workflows
+
+### 3.1 Evidence Ingestion, Dual Hashing & KMS Envelope Encryption
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor IO as Investigating Officer
+    participant API as EvidenceController
+    participant Svc as EvidenceService
+    participant Crypto as CryptoUtil
+    participant KMS as EnvelopeEncryptionEngine
+    participant Storage as S3WormStorageService
+    participant Custody as CustodyService
+    participant Ledger as AuditLedgerService
+
+    IO->>API: POST /api/v1/evidence/upload (metadata + binary file)
+    API->>Svc: uploadAndIngestEvidence(request, file)
+    Svc->>Crypto: calculateSha256(bytes) & calculateSha512(bytes)
+    Crypto-->>Svc: Returns serverSha256 & serverSha512
+    Svc->>Crypto: Compare clientSha256 (if provided)
+    Svc->>Crypto: generateSignature(serverSha256 + metadata, secret)
+    Crypto-->>Svc: Digital Signature (HMAC-SHA256)
+    
+    Svc->>KMS: generateDek() & wrapDek(dek)
+    KMS-->>Svc: Wrapped DEK (via Vault Transit KMS)
+    Svc->>KMS: encryptPayload(bytes, dek)
+    KMS-->>Svc: Encrypted Payload Bytes (AES-256-GCM)
+    
+    Svc->>Storage: store(encryptedBytes, filename, subDir)
+    Storage-->>Svc: Storage Path / S3 WORM Object Key (COMPLIANCE mode)
+    
+    Svc->>Custody: recordEvent(evidenceId, INGEST, actorId, details)
+    Custody-->>Svc: CustodyEvent logged
+    
+    Svc->>Ledger: appendEntry(actorId, "EVIDENCE_INGESTED", ref, details)
+    Ledger-->>Svc: Block appended with SHA-256 Hash Chain
+    
+    Svc-->>API: EvidenceDetailResponse (sealed metadata + hashes)
+    API-->>IO: 201 Created (ApiResponse)
+```
+
+---
+
+### 3.2 Append-Only Hash Chain Ledger & Tamper Alert Workflow
+
+```mermaid
+flowchart LR
+    subgraph HashChain["Append-Only SHA-256 Block Chain"]
+        direction LR
+        B1["Genesis Block (Seq 1)\nprevHash: 0000...0000\nentryHash: SHA-256(...)"] --> 
+        B2["Block 2 (Ingest)\nprevHash: entryHash_1\nentryHash: SHA-256(...)"] --> 
+        B3["Block 3 (Transfer)\nprevHash: entryHash_2\nentryHash: SHA-256(...)"] --> 
+        BN["Block N (Certify)\nprevHash: entryHash_N-1\nentryHash: SHA-256(...)"]
+    end
+
+    subgraph AuditProcess["Ledger Verification & Alarm Engine"]
+        Trigger["GET /api/v1/ledger/verify\n(Or Scheduled Scan)"] --> Scan["Recompute SHA-256 Hashes\nfrom Seq 1 to Head"]
+        Scan --> Check{"Hashes Match?"}
+        Check -- "YES" --> Clean["Status: INTACT (200 OK)"]
+        Check -- "NO" --> Flag["Pinpoint brokenSeq Number"]
+        Flag --> Dispatch["AlarmDispatcherService\nFire SECURITY_TAMPER_ALARM"]
+        Dispatch --> WebSocket["STOMP Broker /ws-evault\nTopic /topic/security/alarms"]
+        WebSocket --> UI["Auditor & Admin Dashboard Alert"]
+    end
+```
+
+---
+
+### 3.3 Statutory BSA 2023 §63 Certificate Generation Workflow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Officer as Prosecutor / IO
+    participant API as CertificateController
+    participant Svc as CertificateService
+    participant PDF as PdfCertificateGenerator
+    participant Custody as CustodyService
+    participant Ledger as AuditLedgerService
+
+    Officer->>API: POST /api/v1/certificates/evidence/{evidenceId}
+    API->>Svc: issueCertificate(evidenceId, request)
+    Svc->>Svc: Fetch EvidenceItem, EvidenceFile, and Custody timeline
+    Svc->>Svc: Validate evidence integrity status == VERIFIED
+    
+    Svc->>PDF: generateSection63Certificate(item, file, events, remarks)
+    Note over PDF: Renders Ministry Insignia, Certificate ID,<br/>Part A (Device & Manner of Production),<br/>Part B (SHA-256 & SHA-512 Hashes),<br/>Custody Timeline Table, §63(4) Legal Declaration,<br/>Officer Signature Line & Digital Seal.
+    PDF-->>Svc: Certificate PDF Bytes
+    
+    Svc->>Svc: Save Certificate entity (status: CERTIFIED)
+    Svc->>Custody: recordEvent(evidenceId, CERTIFY, actorId, details)
+    Svc->>Ledger: appendEntry(actorId, "CERTIFICATE_ISSUED", ref, details)
+    
+    Svc-->>API: CertificateResponse metadata
+    API-->>Officer: 201 Created
+    
+    Officer->>API: GET /api/v1/certificates/{id}/download
+    API-->>Officer: Stream BSA_Section63_Certificate.pdf
+```
+
+---
+
+### 3.4 AI/ML Evidence Analysis & Enrichment Workflow
+
+```mermaid
+flowchart TD
+    Ingest["Evidence Ingested & Sealed in Vault"] --> Trigger["POST /api/v1/evidence/{id}/analyze"]
+    Trigger --> RoleCheck{"Role Authorized?\n(IO, Analyst, Admin)"}
+    RoleCheck -- "No" --> Deny["403 Forbidden"]
+    RoleCheck -- "Yes" --> Dispatch["AiAnalysisService Async Dispatch"]
+    
+    Dispatch --> Gateway["AiGatewayClient"]
+    Gateway --> CheckHealth{"Python FastAPI Online?\n(http://localhost:8000)"}
+    
+    CheckHealth -- "Yes" --> CallFastAPI["POST /ml/v1/analyze"]
+    CallFastAPI --> ML["Python ML Microservice\n(PaddleOCR + spaCy NER)"]
+    ML -- "OCR Text, PII (Aadhaar/PAN), Tags, pHash" --> Gateway
+    
+    CheckHealth -- "No" --> Fallback["Resilient Mock Fallback Engine"]
+    Fallback -- "Simulated OCR & PII Result" --> Gateway
+    
+    Gateway --> Save["Save AiAnalysis Entity (Status: COMPLETED)"]
+    Save --> Custody["Log ANALYZE Event in Custody Timeline"]
+    Custody --> Ledger["Append EVIDENCE_ANALYZED Entry to Audit Ledger"]
+    Ledger --> Finish["GET /api/v1/evidence/{id}/analysis Available"]
+```
+
+---
+
+### 3.5 RFC 3161 Trusted Timestamping (TSA) Workflow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant App as Evidence / Certificate Service
+    participant TSA as Rfc3161TimestampService
+    participant BC as BouncyCastle TSP Engine
+    participant Remote as External TSA (freetsa.org)
+
+    App->>TSA: generateTimestampToken(sha256Hash)
+    
+    alt Remote TSA Mode
+        TSA->>Remote: HTTP POST Time-Stamp Request (TSR)
+        Remote-->>TSA: Time-Stamp Response (DER encoded)
+    else Local / Fallback Mode
+        TSA->>BC: Mint Local RFC 3161 Time-Stamp Token
+        BC-->>TSA: Time-Stamp Response (DER encoded)
+    end
+    
+    TSA-->>App: Rfc3161Token (timestamp, tsaIdentity, derBase64)
+    App->>App: Verify TSA Token Signature against SHA-256 hash
+```
+
+---
+
+## 4. Technology Stack
 
 | Layer | Technology | Purpose |
 |---|---|---|
@@ -115,7 +281,7 @@ flowchart TD
 
 ---
 
-## 4. Subsystems Built & Verified (Chunks 1–7)
+## 5. Subsystems Built & Verified (Chunks 1–11)
 
 ### Chunk 1: Foundation, Database & Case Management
 - **Base Infrastructure**: Standardized RFC 7807 problem details in `GlobalExceptionHandler`, unified envelope `ApiResponse<T>`, and `ActorContextHolder` capturing thread-safe actor identity.
@@ -204,17 +370,21 @@ flowchart TD
 - **Immutability Guarantee**:
   - Raw evidence files and primary SHA-256/SHA-512 hashes remain untouched; AI annotations reside strictly in the dedicated `ai_analyses` entity.
 
-### Tasks 1, 2 & 4: Storage WORM, KMS Envelope Encryption & Hybrid Search Subsystems
-- **Task 1: BE-01 (MinIO / S3 WORM Object Storage Integration)**:
-  - `S3WormStorageService.java`: Implements S3 / MinIO Object Lock `COMPLIANCE` retention mode for hardware-enforced immutability. Automatically defaults to `LocalStorageService` (`app.storage.type=local`) with zero-dependency execution.
-- **Task 2: BE-02 (Key Vault KMS Envelope Encryption Subsystem)**:
-  - `EnvelopeEncryptionEngine.java` & `VaultKmsClientService.java`: Performs AES-256-GCM envelope encryption over raw evidence binary payloads. Wraps/unwraps ephemeral 256-bit DEKs using HashiCorp Vault Transit Engine with resilient local Master KEK fallback for dev/test environments.
-- **Task 4: BE-04 (OpenSearch Hybrid Full-Text & Vector Search Integration)**:
-  - `OpenSearchClientService.java` & `SearchController.java`: Exposes `GET /api/v1/search` for full-text and semantic vector search across cases, evidence OCR text, detected PII, and versioned legal documents with automated JPA database search fallback.
+### Chunk 8: MinIO / S3 WORM Object Storage Integration
+- `S3WormStorageService.java`: Implements S3 / MinIO Object Lock `COMPLIANCE` retention mode for hardware-enforced immutability. Automatically defaults to `LocalStorageService` (`app.storage.type=local`) with zero-dependency execution.
+
+### Chunk 9: HashiCorp Vault KMS Envelope Encryption Subsystem
+- `EnvelopeEncryptionEngine.java` & `VaultKmsClientService.java`: Performs AES-256-GCM envelope encryption over raw evidence binary payloads. Wraps/unwraps ephemeral 256-bit DEKs using HashiCorp Vault Transit Engine with resilient local Master KEK fallback for dev/test environments.
+
+### Chunk 10: Real-Time WebSockets & Security Alarm Dispatcher (STOMP)
+- `AlarmDispatcherService.java` & `SecurityAlarmController.java`: WebSocket STOMP messaging broker over `/ws-evault` broadcasting real-time `SECURITY_TAMPER_ALARM` events over `/topic/security/alarms` whenever physical bit-rot or SQL row tampering is detected.
+
+### Chunk 11: RFC 3161 Trusted Timestamp Authority (TSA / BouncyCastle)
+- `Rfc3161TimestampService.java` & `TimestampController.java`: Mints DER-encoded RFC 3161 Time-Stamp Tokens (TST) using BouncyCastle TSP engine or external TSA (freetsa.org) to anchor evidence ingest and BSA §63 certificates to cryptographically verified wall-clock time.
 
 ---
 
-## 5. API Reference Guide
+## 6. API Reference Guide
 
 Base URL: `http://localhost:8080/api/v1`
 
@@ -270,28 +440,31 @@ Base URL: `http://localhost:8080/api/v1`
 | `GET` | `/api/v1/certificates/evidence/{evidenceId}` | List certificates for an evidence item | IO, Prosecutor, Court, Custodian, Auditor, Admin | None |
 | `GET` | `/api/v1/certificates/{id}/download` | Download court-admissible certificate PDF | IO, Prosecutor, Court, Custodian, Auditor, Admin | None |
 
-### Legal Document Management (`/documents`)
-| Method | Endpoint | Description | Permitted Roles | Request Body |
-|---|---|---|---|---|
-| `POST` | `/api/v1/documents` | Upload initial version (v1) of legal doc | `INVESTIGATING_OFFICER`, `PROSECUTOR`, `COURT`, `SYSTEM_ADMIN` | `multipart/form-data`: `metadata` + `file` |
-| `POST` | `/api/v1/documents/{id}/versions` | Upload revision ($vN$) with change summary | `INVESTIGATING_OFFICER`, `PROSECUTOR`, `COURT`, `SYSTEM_ADMIN` | `multipart/form-data`: `metadata` + `file` |
-| `GET` | `/api/v1/documents/{id}` | Get document metadata and latest active version | IO, Prosecutor, Court, Custodian, Auditor, Admin | None |
-| `GET` | `/api/v1/documents/case/{caseId}` | List legal documents for a case | IO, Prosecutor, Court, Custodian, Auditor, Admin | None |
-| `GET` | `/api/v1/documents/{id}/versions` | Get full revision history and hashes | IO, Prosecutor, Court, Custodian, Auditor, Admin | None |
-| `GET` | `/api/v1/documents/{id}/download` | Stream document file (`?version=N` optional) | IO, Prosecutor, Court, Custodian, Auditor, Admin | None |
-
 ### Search Engine Subsystem (`/search`)
 | Method | Endpoint | Description | Permitted Roles | Request Body / Query Params |
 |---|---|---|---|---|
 | `GET` | `/api/v1/search` | Hybrid full-text & semantic vector search across cases, evidence OCR, PII, & legal docs | Authenticated Users | Query Params: `query`, `type` (`ALL`/`CASE`/`EVIDENCE`/`DOCUMENT`), `page`, `size` |
 
+### Security Alarms & WebSockets (`/alarms`)
+| Method | Endpoint | Description | Permitted Roles | Request Body |
+|---|---|---|---|---|
+| `GET` | `/api/v1/alarms` | List unacknowledged tamper security alarms | `AUDITOR`, `SYSTEM_ADMIN` | None |
+| `POST` | `/api/v1/alarms/{id}/acknowledge` | Acknowledge alarm after investigation | `AUDITOR`, `SYSTEM_ADMIN` | None |
+| `WS` | `/ws-evault` | STOMP WebSocket connection endpoint | Authenticated Users | Subscription: `/topic/security/alarms` |
+
+### RFC 3161 Timestamping (`/timestamp`)
+| Method | Endpoint | Description | Permitted Roles | Request Body |
+|---|---|---|---|---|
+| `POST` | `/api/v1/timestamp/request` | Mint DER-encoded RFC 3161 Time-Stamp Token | `INVESTIGATING_OFFICER`, `FORENSIC_ANALYST`, `PROSECUTOR`, `SYSTEM_ADMIN` | `TimestampRequest` |
+| `POST` | `/api/v1/timestamp/verify` | Validate time token against recorded hash | Authenticated Users | `VerifyTimestampRequest` |
+
 ---
 
-## 6. Directory Structure
+## 7. Directory Structure
 
 ```text
 backend/
-├── pom.xml                                   # Maven POM with Spring Boot 4.1.1, Security, OpenPDF, JJWT
+├── pom.xml                                   # Maven POM with Spring Boot 4.1.1, Security, OpenPDF, JJWT, BouncyCastle
 ├── src/
 │   ├── main/
 │   │   ├── java/com/shrihari/evault/
@@ -304,6 +477,7 @@ backend/
 │   │   │   │   └── CryptoUtil.java            # SHA-256, SHA-512, and HMAC helper
 │   │   │   ├── config/                        # Configuration beans
 │   │   │   │   ├── OpenApiConfig.java         # OpenAPI 3.0 info, servers, and security scheme
+│   │   │   │   ├── WebSocketConfig.java       # STOMP WebSocket message broker config
 │   │   │   │   └── WebConfig.java             # CORS and Jackson date/time mappings
 │   │   │   ├── controller/                    # REST API Controllers
 │   │   │   │   ├── AiAnalysisController.java  # AI/ML evidence analysis controller
@@ -314,6 +488,9 @@ backend/
 │   │   │   │   ├── EvidenceController.java
 │   │   │   │   ├── LedgerController.java
 │   │   │   │   ├── LegalDocumentController.java
+│   │   │   │   ├── SearchController.java      # Hybrid OpenSearch REST controller
+│   │   │   │   ├── SecurityAlarmController.java # Real-time tamper alarm REST & STOMP controller
+│   │   │   │   ├── TimestampController.java   # RFC 3161 TSA token REST controller
 │   │   │   │   └── UserController.java
 │   │   │   ├── dto/                           # Data Transfer Objects & Validation
 │   │   │   │   ├── AddDocumentVersionRequest.java
@@ -336,11 +513,17 @@ backend/
 │   │   │   │   ├── LegalDocumentResponse.java
 │   │   │   │   ├── LoginRequest.java
 │   │   │   │   ├── RegisterRequest.java
+│   │   │   │   ├── Rfc3161TokenResponse.java
+│   │   │   │   ├── SearchHitDto.java
+│   │   │   │   ├── SearchResultResponse.java
+│   │   │   │   ├── SecurityAlarmResponse.java
+│   │   │   │   ├── TimestampRequest.java
 │   │   │   │   ├── TriggerAnalysisRequest.java
 │   │   │   │   ├── UpdateCaseRequest.java
 │   │   │   │   ├── UpdateCaseStatusRequest.java
 │   │   │   │   ├── UploadEvidenceRequest.java
-│   │   │   │   └── UserResponse.java
+│   │   │   │   ├── UserResponse.java
+│   │   │   │   └── VerifyTimestampRequest.java
 │   │   │   ├── exception/                     # Exception Handling & RFC 7807 Problems
 │   │   │   │   ├── DuplicateResourceException.java
 │   │   │   │   ├── GlobalExceptionHandler.java
@@ -350,7 +533,7 @@ backend/
 │   │   │   │   ├── AiAnalysis.java            # AI OCR, PII, and pHash analysis model
 │   │   │   │   ├── AnalysisStatus.java        # PENDING, PROCESSING, COMPLETED, FAILED
 │   │   │   │   ├── AuditLedger.java           # Cryptographic hash chain table
-│   │   │   │   ├── BaseEntity.java            # UUID id, createdAt, updatedAt
+      │   │   │   ├── BaseEntity.java            # UUID id, createdAt, updatedAt
 │   │   │   │   ├── Case.java
 │   │   │   │   ├── CaseStatus.java
 │   │   │   │   ├── Certificate.java           # BSA 2023 §63 certificate metadata
@@ -365,6 +548,7 @@ backend/
 │   │   │   │   ├── LegalDocument.java
 │   │   │   │   ├── LegalDocumentType.java
 │   │   │   │   ├── RoleEnum.java
+│   │   │   │   ├── SecurityAlarm.java         # Real-time tamper alarm entity
 │   │   │   │   └── User.java
 │   │   │   ├── repository/                    # Spring Data JPA Repositories
 │   │   │   │   ├── AiAnalysisRepository.java
@@ -376,6 +560,7 @@ backend/
 │   │   │   │   ├── EvidenceFileRepository.java
 │   │   │   │   ├── EvidenceItemRepository.java
 │   │   │   │   ├── LegalDocumentRepository.java
+│   │   │   │   ├── SecurityAlarmRepository.java
 │   │   │   │   └── UserRepository.java
 │   │   │   ├── security/                      # Spring Security Subsystem
 │   │   │   │   ├── CaseSecurityService.java   # ABAC case-level access checks
@@ -388,6 +573,7 @@ backend/
 │   │   │   └── service/                       # Business Logic Layer
 │   │   │       ├── AiAnalysisService.java     # AI trigger and result management
 │   │   │       ├── AiGatewayClient.java       # REST client & mock fallback for ML gateway
+│   │   │       ├── AlarmDispatcherService.java # STOMP WebSocket alarm dispatcher
 │   │   │       ├── AuditLedgerService.java
 │   │   │       ├── AuthService.java
 │   │   │       ├── CaseService.java
@@ -395,6 +581,8 @@ backend/
 │   │   │       ├── CustodyService.java
 │   │   │       ├── EvidenceService.java
 │   │   │       ├── LegalDocumentService.java
+│   │   │       ├── Rfc3161TimestampService.java # BouncyCastle TSP time-stamping service
+│   │   │       ├── UserService.java
 │   │   │       ├── crypto/
 │   │   │       │   ├── EnvelopeEncryptionEngine.java # AES-256-GCM payload encryption
 │   │   │       │   └── VaultKmsClientService.java    # Vault Transit DEK wrapping & KEK fallback
@@ -407,7 +595,7 @@ backend/
 │   │   │           ├── S3WormStorageService.java    # MinIO / S3 WORM Object Lock storage
 │   │   │           └── StorageService.java          # Pluggable storage SPI
 │   │   └── resources/
-│   │       └── application.properties         # Main config (PostgreSQL, Storage, KMS, OpenSearch, JWT)
+│   │       └── application.properties         # Main config (PostgreSQL, Storage, KMS, OpenSearch, TSA, JWT)
 │   └── test/
 │       ├── java/com/shrihari/evault/
 │       │   ├── EvaultApplicationTests.java
@@ -422,9 +610,14 @@ backend/
 │       │   │   ├── LedgerAndCustodyIntegrationTest.java
 │       │   │   ├── LegalDocumentControllerIntegrationTest.java
 │       │   │   ├── SearchControllerIntegrationTest.java
-│       │   │   └── SecurityAccessControlIntegrationTest.java
+│       │   │   ├── SecurityAccessControlIntegrationTest.java
+│       │   │   ├── SecurityAlarmControllerIntegrationTest.java
+│       │   │   ├── TimestampControllerIntegrationTest.java
+│       │   │   ├── WebSocketAndTamperAlarmIntegrationTest.java
+│       │   │   └── WebSocketSecurityTest.java
 │       │   └── service/
 │       │       ├── AiAnalysisServiceTest.java
+│       │       ├── AlarmDispatcherServiceTest.java
 │       │       ├── AuditLedgerServiceTest.java
 │       │       ├── CaseServiceTest.java
 │       │       ├── CertificateServiceTest.java
@@ -433,6 +626,7 @@ backend/
 │       │       ├── EvidenceServiceTest.java
 │       │       ├── LegalDocumentServiceTest.java
 │       │       ├── PdfCertificateGeneratorTest.java
+│       │       ├── Rfc3161TimestampServiceTest.java
 │       │       ├── S3WormStorageServiceTest.java
 │       │       └── UserServiceTest.java
 │       └── resources/
@@ -441,7 +635,7 @@ backend/
 
 ---
 
-## 7. Automated Test Suite
+## 8. Automated Test Suite
 
 The system includes a 100% automated test suite with **67 passing unit and integration tests**:
 
@@ -488,7 +682,7 @@ The system includes a 100% automated test suite with **67 passing unit and integ
 
 ---
 
-## 8. Developer Quickstart Guide
+## 9. Developer Quickstart Guide
 
 ### Prerequisites
 - **Java 21 LTS** installed (`java -version`).
@@ -533,7 +727,7 @@ Once the backend is running, explore and test the interactive API docs:
 
 ---
 
-## 9. Completion Summary & Project Status
+## 10. Completion Summary & Project Status
 
 All **11 architectural chunks** for the SIH26190 E-Vault backend are 100% completed, fully integrated, and verified with **67 passing unit and integration tests**:
 
@@ -548,5 +742,3 @@ All **11 architectural chunks** for the SIH26190 E-Vault backend are 100% comple
 9. ✅ **Chunk 9: HashiCorp Vault KMS Envelope Encryption (AES-256-GCM DEK)**
 10. ✅ **Chunk 10: Real-Time WebSockets & Security Alarm Dispatcher (STOMP)**
 11. ✅ **Chunk 11: RFC 3161 Trusted Timestamp Authority (TSA / BouncyCastle)**
-
-
