@@ -1,7 +1,7 @@
-# E-Vault Frontend Setup & Architecture
+﻿# E-Vault Frontend Setup & Architecture
 
 ## Overview
-The E-Vault frontend is the secure, client-side interface for digital evidence management. It is designed to allow law enforcement officers, investigators, and court personnel to manage cases, verify cryptographically sealed evidence, trace chains of custody, and issue statutory certificates. Rather than using mocked data, the frontend is directly wired to the real E-Vault Spring Boot backend API, ensuring all interactions—from appending to the ledger to uploading evidence—are persisted securely in the database.
+The E-Vault frontend is the secure, client-side interface for digital evidence management. It is designed to allow law enforcement officers, investigators, and court personnel to manage cases, verify cryptographically sealed evidence, trace chains of custody, and issue statutory certificates. Rather than using mocked data, the frontend is directly wired to the real E-Vault Spring Boot backend API, ensuring all interactionsâ€”from appending to the ledger to uploading evidenceâ€”are persisted securely in the database.
 
 ## Tech Stack Summary
 - **Framework**: Next.js 16.3+ (App Router)
@@ -76,7 +76,7 @@ Inside the `src/` directory, the code is structured as follows:
 - **RBAC**: Restricted to Forensic Analysts and Lead Officers.
 
 ### Statutory Certificates (`/certificates`)
-- **Purpose**: Where officers generate, view, and download court-admissible PDF certificates (e.g., BSA 2023 §63).
+- **Purpose**: Where officers generate, view, and download court-admissible PDF certificates (e.g., BSA 2023 Â§63).
 - **Endpoints**: `certificatesApi.getByEvidenceId()`, `certificatesApi.issue()`, `certificatesApi.download()`.
 - **Key Components**: **BsaCertificatePreviewModal** which displays the statutory schedule and hash snapshots before final generation.
 - **RBAC**: Only Lead Investigating Officers and Administrators can issue certificates.
@@ -96,7 +96,7 @@ Inside the `src/` directory, the code is structured as follows:
 ### Admin Setup (`/admin`)
 - **Purpose**: Role-based access control directory where administrators onboard new system actors and review cryptographic security posture.
 - **Endpoints**: `usersApi.getAll()`, `usersApi.create()`.
-- **Key Components**: The **Security Specs Grid** detailing JWT, RBAC, and ECDSA-P256 usage, alongside the user directory grid.
+- **Key Components**: The **Security Specs Grid** detailing JWT, RBAC, and HMAC-SHA256 usage, alongside the user directory grid.
 - **RBAC**: Strictly limited to Administrators.
 
 ## Key Shared Components
@@ -108,3 +108,4 @@ Inside the `src/` directory, the code is structured as follows:
 The `lib/crypto.ts` file houses pure client-side cryptographic functions, most notably generating SHA-256 hashes using the browser's native `crypto.subtle` API. 
 **Why is this important?** 
 Hashing must happen in the browser *before* the file is uploaded. This ensures that the raw digital evidence is fingerprinted by the user's machine, proving that the evidence was not tampered with or corrupted during transit to the Spring Boot server. This client-side hash becomes the permanent cryptographic seal verified in the court of law.
+

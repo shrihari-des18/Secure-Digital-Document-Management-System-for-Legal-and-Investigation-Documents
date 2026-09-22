@@ -178,7 +178,7 @@ function DocumentsContent() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search document ID, title, summary..."
-              className="input-field pl-9"
+              className="input-field !pl-10"
             />
           </div>
 

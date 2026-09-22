@@ -145,7 +145,7 @@ export default function LedgerPage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search action, actor ID, resource ref, entry hash..."
-            className="input-field pl-9"
+            className="input-field !pl-10"
           />
         </div>
 

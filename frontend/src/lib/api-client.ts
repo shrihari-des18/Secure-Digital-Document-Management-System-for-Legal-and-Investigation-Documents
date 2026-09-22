@@ -1,4 +1,4 @@
-import type { ApiResponse } from '@/types';
+﻿import type { ApiResponse } from '@/types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
 
@@ -104,7 +104,7 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
 
   const json: ApiResponse<T> = await response.json();
 
-  // Unwrap ApiResponse<T> envelope — return .data directly
+  // Unwrap ApiResponse<T> envelope â€” return .data directly
   if (json && typeof json === 'object' && 'success' in json && 'data' in json) {
     if (!json.success) {
       throw new ApiError(response.status, json.message || 'Operation failed');
@@ -145,7 +145,14 @@ export const apiClient = {
   upload<T>(endpoint: string, formData: FormData, options?: RequestOptions): Promise<T> {
     return request<T>(endpoint, { ...options, method: 'POST', body: formData });
   },
-
+  /** Direct authenticated download trigger */
+  async getBlob(endpoint: string): Promise<Blob> {
+    const response = await request<Response>(endpoint, { rawResponse: true, method: 'GET' });
+    if (!response.ok) {
+      throw new ApiError(response.status, `Download failed: ${response.statusText}`);
+    }
+    return response.blob();
+  },
   /** Direct authenticated download trigger */
   async downloadFile(endpoint: string, defaultFilename = 'download'): Promise<void> {
     const response = await request<Response>(endpoint, { rawResponse: true, method: 'GET' });
@@ -171,3 +178,6 @@ export const apiClient = {
     window.URL.revokeObjectURL(blobUrl);
   },
 };
+
+
+

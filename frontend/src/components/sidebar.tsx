@@ -10,6 +10,7 @@ import {
   Link2,
   BookOpen,
   Shield,
+  ShieldAlert,
   Award,
   Users,
   Brain,
@@ -17,6 +18,7 @@ import {
   ChevronLeft,
   ChevronRight,
   PieChart,
+  Search,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useAuthStore } from '@/stores/auth-store';
@@ -34,6 +36,11 @@ const NAV_ITEMS: NavItem[] = [
     label: 'Dashboard',
     href: '/dashboard',
     icon: LayoutDashboard,
+  },
+  {
+    label: 'Search',
+    href: '/search',
+    icon: Search,
   },
   {
     label: 'Cases',
@@ -65,6 +72,12 @@ const NAV_ITEMS: NavItem[] = [
     label: 'Certificates',
     href: '/certificates',
     icon: Award,
+  },
+  {
+    label: 'Security Alarms',
+    href: '/alarms',
+    icon: ShieldAlert,
+    roles: [RoleEnum.SYSTEM_ADMIN, RoleEnum.AUDITOR],
   },
   {
     label: 'AI Analysis',

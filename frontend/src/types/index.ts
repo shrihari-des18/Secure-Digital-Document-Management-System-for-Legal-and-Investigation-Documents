@@ -1,5 +1,5 @@
-// ============================================================
-// Enums — mirror backend Java enums exactly
+﻿// ============================================================
+// Enums â€” mirror backend Java enums exactly
 // ============================================================
 
 export enum RoleEnum {
@@ -72,7 +72,7 @@ export enum IntegrityStatus {
 }
 
 // ============================================================
-// Backend API envelope — ApiResponse<T>
+// Backend API envelope â€” ApiResponse<T>
 // ============================================================
 
 export interface ApiResponse<T> {
@@ -379,3 +379,113 @@ export interface CreateUserRequest {
   department?: string;
   role: RoleEnum;
 }
+
+// ============================================================
+// Search DTOs
+// ============================================================
+
+export enum SearchEntityType {
+  ALL = 'ALL',
+  CASE = 'CASE',
+  EVIDENCE = 'EVIDENCE',
+  DOCUMENT = 'DOCUMENT',
+}
+
+export interface SearchResultItem {
+  id: string;
+  entityType: 'CASE' | 'EVIDENCE' | 'DOCUMENT';
+  title: string;
+  snippet: string | null;
+  score: number | null;
+  metadata: Record<string, unknown> | null;
+}
+
+export interface SearchResponse {
+  hits: SearchResultItem[];
+  query: string;
+  type?: string;
+  page: number;
+  size: number;
+  totalHits: number;
+  totalPages: number;
+}
+
+// ============================================================
+// Security Alarm DTOs
+// ============================================================
+
+export enum AlarmSeverity {
+  INFO = 'INFO',
+  LOW = 'LOW',
+  MEDIUM = 'MEDIUM',
+  HIGH = 'HIGH',
+  CRITICAL = 'CRITICAL',
+}
+
+export enum AlarmType {
+  TAMPER_DETECTED = 'TAMPER_DETECTED',
+  HASH_MISMATCH = 'HASH_MISMATCH',
+  UNAUTHORIZED_ACCESS_ATTEMPT = 'UNAUTHORIZED_ACCESS_ATTEMPT',
+  SEQUENCE_BREAK = 'SEQUENCE_BREAK',
+  SUSPICIOUS_CUSTODY_TRANSFER = 'SUSPICIOUS_CUSTODY_TRANSFER',
+  SECURITY_DRILL = 'SECURITY_DRILL',
+}
+
+export interface SecurityAlarm {
+  id: string;
+  alarmType: AlarmType | string;
+  severity: AlarmSeverity;
+  resourceRef: string | null;
+  message: string;
+  details: Record<string, unknown> | null;
+  caseId: string | null;
+  acknowledged: boolean;
+  acknowledgedBy: string | null;
+  acknowledgedAt: string | null;
+  createdAt: string;
+}
+
+export interface TriggerTestAlarmRequest {
+  alarmType: string;
+  severity: string;
+  resourceRef?: string;
+  message: string;
+  details?: Record<string, unknown>;
+  caseId?: string;
+}
+
+// ============================================================
+// RFC 3161 Timestamp DTOs
+// ============================================================
+
+export interface StampHashRequest {
+  sha256: string;
+  description?: string;
+}
+
+export interface VerifyTimestampRequest {
+  tokenBase64: string;
+  expectedSha256: string;
+}
+
+export interface TimestampResponse {
+  tokenBase64: string;
+  genTime: string;
+  tsaName: string;
+  serialNumber: string;
+  policyOid: string;
+  hashAlgorithm: string;
+  imprintHash: string;
+}
+
+export interface TimestampVerifyResponse {
+  valid: boolean;
+  hashMatches: boolean;
+  signatureVerified: boolean;
+  genTime: string;
+  tsaName: string;
+  serialNumber: string;
+  message: string;
+}
+
+

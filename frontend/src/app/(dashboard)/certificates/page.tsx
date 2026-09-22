@@ -147,7 +147,7 @@ export default function CertificatesHubPage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search certificate number, manner of production, hash..."
-            className="input-field pl-9"
+            className="input-field !pl-10"
           />
         </div>
 

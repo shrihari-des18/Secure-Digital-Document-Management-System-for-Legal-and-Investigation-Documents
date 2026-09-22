@@ -17,6 +17,7 @@ import {
   Upload,
   Scale,
   Settings,
+  ShieldAlert,
 } from 'lucide-react';
 import { casesApi } from '@/lib/api/cases';
 import { evidenceApi } from '@/lib/api/evidence';
@@ -32,6 +33,9 @@ import {
 import { Tabs } from '@/components/ui/tabs';
 import { Modal } from '@/components/ui/modal';
 import { CourtBundleModal } from '@/components/cases/court-bundle-modal';
+import { SecurityActivityTab } from '@/components/cases/security-activity-tab';
+import { useAuthStore } from '@/stores/auth-store';
+import { RoleEnum } from '@/types';
 import type {
   CreateLegalDocumentRequest,
 } from '@/types';
@@ -42,8 +46,9 @@ export default function CaseDetailPage() {
   const params = useParams();
   const caseId = params?.id as string;
   const queryClient = useQueryClient();
+  const user = useAuthStore((s) => s.user);
 
-  const [activeTab, setActiveTab] = useState<'evidence' | 'documents' | 'team'>('evidence');
+  const [activeTab, setActiveTab] = useState<string>('evidence');
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [newStatus, setNewStatus] = useState<CaseStatus>(CaseStatus.UNDER_INVESTIGATION);
   const [statusReason, setStatusReason] = useState('');
@@ -174,10 +179,12 @@ export default function CaseDetailPage() {
     );
   }
 
+  const canViewActivity = user?.role === RoleEnum.SYSTEM_ADMIN || user?.role === RoleEnum.AUDITOR || user?.role === RoleEnum.INVESTIGATING_OFFICER;
   const tabs = [
     { id: 'evidence', label: 'Digital Evidence Items', icon: FileSearch, count: evidenceList.length },
     { id: 'documents', label: 'Legal Documents & Filings', icon: FileText, count: documentList.length },
     { id: 'team', label: 'Assigned Team & Officers', icon: Users, count: caseData.assignedOfficerIds?.length || 1 },
+    ...(canViewActivity ? [{ id: 'activity', label: 'Security Activity', icon: ShieldAlert }] : []),
   ];
 
   const leadUser = allUsers.find((u) => u.id === caseData.leadOfficerId);
@@ -255,7 +262,7 @@ export default function CaseDetailPage() {
         <details className="group mt-6">
           <summary className="text-xs font-mono font-semibold text-zinc-400 uppercase tracking-wider cursor-pointer hover:text-zinc-200 transition-colors inline-flex items-center gap-2">
             <span>View Docket Metadata</span>
-            <span className="group-open:rotate-180 transition-transform">▼</span>
+            <span className="group-open:rotate-180 transition-transform">â–¼</span>
           </summary>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-4 text-xs">
             <div className="flex items-center gap-3 text-zinc-400">
@@ -469,7 +476,7 @@ export default function CaseDetailPage() {
                         )}
                       </div>
                       <p className="text-[11px] text-zinc-500 font-mono">
-                        {u ? `${u.department || 'Police Department'} • Badge: ${u.badgeNumber || 'N/A'}` : officerId}
+                        {u ? `${u.department || 'Police Department'} â€¢ Badge: ${u.badgeNumber || 'N/A'}` : officerId}
                       </p>
                     </div>
                   </div>
@@ -477,6 +484,13 @@ export default function CaseDetailPage() {
               );
             })}
           </div>
+        </div>
+      )}
+
+      {/* Tab 4: Security Activity */}
+      {activeTab === 'activity' && canViewActivity && (
+        <div className="border border-zinc-800 bg-zinc-950 rounded-xl p-6">
+          <SecurityActivityTab caseId={caseId} />
         </div>
       )}
 
@@ -646,7 +660,7 @@ export default function CaseDetailPage() {
               type="text"
               value={docTitle}
               onChange={(e) => setDocTitle(e.target.value)}
-              placeholder="e.g., First Information Report (FIR) under §66 ITA"
+              placeholder="e.g., First Information Report (FIR) under Â§66 ITA"
               required
               className="input-field"
             />
@@ -722,3 +736,4 @@ export default function CaseDetailPage() {
     </div>
   );
 }
+

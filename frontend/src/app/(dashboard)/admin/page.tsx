@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import {
   Plus,
+  ShieldAlert,
   Search,
   Lock,
   Key,
@@ -15,14 +16,24 @@ import {
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { usersApi } from '@/lib/api/users';
+import { alarmsApi } from '@/lib/api/alarms';
 import { ROLE_LABELS, ROLE_COLORS } from '@/stores/auth-store';
 import { Modal } from '@/components/ui/modal';
 import type { CreateUserRequest } from '@/types';
-import { RoleEnum } from '@/types';
+import { RoleEnum, AlarmType, AlarmSeverity } from '@/types';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 export default function AdminPage() {
   const queryClient = useQueryClient();
+  const triggerAlarmMutation = useMutation({
+    mutationFn: () => alarmsApi.triggerTestAlarm({
+      alarmType: AlarmType.SECURITY_DRILL,
+      severity: AlarmSeverity.CRITICAL,
+      message: 'SIMULATED INCIDENT: Unauthorized access attempt detected on evidence vault container.'
+    }),
+    onSuccess: () => alert('Security drill alarm dispatched to STOMP topic.'),
+    onError: (err: any) => alert(err.message || 'Failed to trigger alarm')
+  });
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRole, setSelectedRole] = useState<RoleEnum | 'ALL'>('ALL');
 
@@ -100,6 +111,14 @@ export default function AdminPage() {
         </div>
 
         <button
+          onClick={() => triggerAlarmMutation.mutate()}
+          disabled={triggerAlarmMutation.isPending}
+          className="btn-secondary shrink-0 text-red-400 hover:text-red-300 border-red-500/20 hover:border-red-500/40"
+        >
+          <ShieldAlert className="w-4 h-4" />
+          <span>{triggerAlarmMutation.isPending ? 'Triggering...' : 'Trigger Security Drill'}</span>
+        </button>
+        <button
           onClick={() => setIsRegisterOpen(true)}
           className="btn-primary shrink-0"
         >
@@ -112,7 +131,7 @@ export default function AdminPage() {
       <details className="group mt-6">
         <summary className="text-xs font-mono font-semibold text-zinc-400 uppercase tracking-wider cursor-pointer hover:text-zinc-200 transition-colors inline-flex items-center gap-2">
           <span>View Security Posture & Cryptographic Specs</span>
-          <span className="group-open:rotate-180 transition-transform">▼</span>
+          <span className="group-open:rotate-180 transition-transform">â–¼</span>
         </summary>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 pt-4">
           <div className="border border-zinc-800 bg-zinc-950 rounded-xl p-6 flex items-start gap-4">
@@ -167,7 +186,7 @@ export default function AdminPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search officer name, username, email, badge..."
-              className="input-field pl-9"
+              className="input-field !pl-10"
             />
           </div>
         </div>
@@ -390,3 +409,4 @@ export default function AdminPage() {
     </div>
   );
 }
+

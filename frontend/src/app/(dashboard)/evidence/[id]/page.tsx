@@ -19,6 +19,8 @@ import { formatDate, formatBytes } from '@/lib/crypto';
 import { ClassificationBadge, CustodyStateBadge } from '@/components/ui/badge';
 import { Tabs } from '@/components/ui/tabs';
 import { IntegritySealCard } from '@/components/evidence/integrity-seal-card';
+import { DocumentCanvas } from '@/components/evidence/document-canvas';
+import { TrustedTimestampSection } from '@/components/evidence/trusted-timestamp-section';
 import { CustodyTimelineView } from '@/components/evidence/custody-timeline-view';
 import { AiAnalysisPanel } from '@/components/evidence/ai-analysis-panel';
 import { CertificateSection } from '@/components/evidence/certificate-section';
@@ -83,7 +85,7 @@ export default function EvidenceDetailPage() {
   const tabs = [
     { id: 'custody', label: 'Chain of Custody Ledger', icon: Link2 },
     { id: 'ai', label: 'AI Forensics & OCR Extraction', icon: Brain },
-    { id: 'certificates', label: 'BSA §63 Statutory Certificates', icon: Award },
+    { id: 'certificates', label: 'BSA Â§63 Statutory Certificates', icon: Award },
   ];
 
   return (
@@ -142,7 +144,7 @@ export default function EvidenceDetailPage() {
         <details className="group mt-6">
           <summary className="text-xs font-mono font-semibold text-zinc-400 uppercase tracking-wider cursor-pointer hover:text-zinc-200 transition-colors inline-flex items-center gap-2">
             <span>View Seizure & Hardware Specs</span>
-            <span className="group-open:rotate-180 transition-transform">▼</span>
+            <span className="group-open:rotate-180 transition-transform">â–¼</span>
           </summary>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 pt-4 text-xs">
             <div>
@@ -169,7 +171,7 @@ export default function EvidenceDetailPage() {
                 {evidence.file?.originalFileName || 'raw_data.bin'}
               </span>
               <span className="text-[10px] font-mono text-emerald-400">
-                {evidence.file?.sizeBytes ? formatBytes(evidence.file.sizeBytes) : '—'} • {evidence.file?.contentType || 'binary'}
+                {evidence.file?.sizeBytes ? formatBytes(evidence.file.sizeBytes) : 'â€”'} â€¢ {evidence.file?.contentType || 'binary'}
               </span>
             </div>
 
@@ -189,6 +191,21 @@ export default function EvidenceDetailPage() {
       {/* Cryptographic Integrity Card */}
       <IntegritySealCard evidence={evidence} />
 
+      {/* RFC 3161 Timestamp */}
+      <TrustedTimestampSection resourceType="evidence" resourceId={evidence.id} />
+
+      {/* Sandboxed Document Viewer */}
+      <div className="mt-8 mb-4">
+        <h2 className="text-lg font-bold tracking-tight text-zinc-100 mb-4 flex items-center gap-2">
+          Secure Evidence Viewer
+        </h2>
+        <DocumentCanvas 
+          evidenceId={evidence.id} 
+          fileName={evidence.file?.originalFileName || 'evidence.bin'} 
+          onDownloadFallback={handleDownload}
+        />
+      </div>
+
       {/* Tabs */}
       <Tabs tabs={tabs} activeTab={activeTab} onChange={(id) => setActiveTab(id as any)} />
 
@@ -203,3 +220,4 @@ export default function EvidenceDetailPage() {
     </div>
   );
 }
+

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { ShieldCheck, ShieldAlert, RefreshCw, Key, Hash, FileCheck, CheckCircle2 } from 'lucide-react';
@@ -68,7 +68,7 @@ export function IntegritySealCard({ evidence, onVerified }: IntegritySealCardPro
               </span>
             </div>
             <p className="text-xs text-zinc-400 mt-0.5 font-mono">
-              Enforced by ECDSA Digital Signature & Append-Only WORM Storage
+              Enforced by HMAC-SHA256 Digital Signature & Append-Only WORM Storage
             </p>
           </div>
         </div>
@@ -92,7 +92,7 @@ export function IntegritySealCard({ evidence, onVerified }: IntegritySealCardPro
             <span>Primary Ingest Hash (SHA-256)</span>
           </div>
           <p className="font-mono text-xs text-emerald-400 break-all select-all bg-zinc-950 p-2.5 rounded border border-zinc-800">
-            {lastCheck?.recordedSha256 || file?.sha256 || '—'}
+            {lastCheck?.recordedSha256 || file?.sha256 || 'â€”'}
           </p>
         </div>
 
@@ -103,7 +103,7 @@ export function IntegritySealCard({ evidence, onVerified }: IntegritySealCardPro
             <span>Pre-Upload Client Hash (WebCrypto)</span>
           </div>
           <p className="font-mono text-xs text-zinc-200 break-all select-all bg-zinc-950 p-2.5 rounded border border-zinc-800">
-            {file?.clientSha256 || file?.sha256 || '—'}
+            {file?.clientSha256 || file?.sha256 || 'â€”'}
           </p>
         </div>
 
@@ -129,7 +129,7 @@ export function IntegritySealCard({ evidence, onVerified }: IntegritySealCardPro
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
             <div>
               <span className="text-zinc-500 font-mono">Key Identifier: </span>
-              <span className="font-mono text-zinc-200 font-medium">{file?.signingKeyId || 'KMS-ECDSA-P256-V1'}</span>
+              <span className="font-mono text-zinc-200 font-medium">{file?.signingKeyId || 'KMS-HMAC-SHA256-V1'}</span>
             </div>
             <div>
               <span className="text-zinc-500 font-mono">Sealed Timestamp: </span>
@@ -138,7 +138,7 @@ export function IntegritySealCard({ evidence, onVerified }: IntegritySealCardPro
             <div className="sm:col-span-2">
               <span className="text-zinc-500 font-mono">Digital Signature: </span>
               <span className="font-mono text-[11px] text-zinc-400 break-all">
-                {file?.digitalSignature || 'sig_01J...[BouncyCastle ECDSA-P256-SHA256]'}
+                {file?.digitalSignature || 'sig_01J...[HMAC-SHA256]'}
               </span>
             </div>
           </div>
@@ -177,3 +177,4 @@ export function IntegritySealCard({ evidence, onVerified }: IntegritySealCardPro
     </div>
   );
 }
+

@@ -119,7 +119,7 @@ export default function CasesPage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search FIR / Case number, title..."
-            className="input-field pl-9"
+            className="input-field !pl-10"
           />
         </div>
 
