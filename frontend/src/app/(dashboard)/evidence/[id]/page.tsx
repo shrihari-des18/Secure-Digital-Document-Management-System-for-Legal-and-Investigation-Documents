@@ -85,7 +85,7 @@ export default function EvidenceDetailPage() {
   const tabs = [
     { id: 'custody', label: 'Chain of Custody Ledger', icon: Link2 },
     { id: 'ai', label: 'AI Forensics & OCR Extraction', icon: Brain },
-    { id: 'certificates', label: 'BSA Â§63 Statutory Certificates', icon: Award },
+    { id: 'certificates', label: 'BSA Section 63 Statutory Certificates', icon: Award },
   ];
 
   return (
@@ -144,7 +144,7 @@ export default function EvidenceDetailPage() {
         <details className="group mt-6">
           <summary className="text-xs font-mono font-semibold text-zinc-400 uppercase tracking-wider cursor-pointer hover:text-zinc-200 transition-colors inline-flex items-center gap-2">
             <span>View Seizure & Hardware Specs</span>
-            <span className="group-open:rotate-180 transition-transform">â–¼</span>
+            <span className="group-open:rotate-180 transition-transform">▼</span>
           </summary>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 pt-4 text-xs">
             <div>

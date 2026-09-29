@@ -61,10 +61,10 @@ export function NotificationBell() {
   const handleAlarmPush = useCallback((message: import('@stomp/stompjs').IMessage) => {
     try {
       const alarm = JSON.parse(message.body) as SecurityAlarm;
-      setUnacknowledgedCount((prev) => prev + 1);
-      setRecentAlarms((prev) => [alarm, ...prev].slice(0, 5));
+      
+      setRecentAlarms((prev) => { if (prev.some(a => a.id === alarm.id)) return prev; setUnacknowledgedCount(c => c + 1); return [alarm, ...prev].slice(0, 5); });
     } catch {
-      // Malformed message — ignore
+      // Malformed message â ignore
     }
   }, []);
 
@@ -132,7 +132,7 @@ export function NotificationBell() {
                 onClick={() => setIsOpen(false)}
                 className="text-[11px] text-zinc-400 hover:text-zinc-100 font-semibold cursor-pointer"
               >
-                View all →
+                View all â
               </Link>
             )}
           </div>

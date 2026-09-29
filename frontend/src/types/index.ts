@@ -1,5 +1,5 @@
-﻿// ============================================================
-// Enums â€” mirror backend Java enums exactly
+// ============================================================
+// Enums — mirror backend Java enums exactly
 // ============================================================
 
 export enum RoleEnum {
@@ -72,7 +72,7 @@ export enum IntegrityStatus {
 }
 
 // ============================================================
-// Backend API envelope â€” ApiResponse<T>
+// Backend API envelope — ApiResponse<T>
 // ============================================================
 
 export interface ApiResponse<T> {
@@ -393,7 +393,7 @@ export enum SearchEntityType {
 
 export interface SearchResultItem {
   id: string;
-  entityType: 'CASE' | 'EVIDENCE' | 'DOCUMENT';
+  type: 'CASE' | 'EVIDENCE' | 'DOCUMENT';
   title: string;
   snippet: string | null;
   score: number | null;

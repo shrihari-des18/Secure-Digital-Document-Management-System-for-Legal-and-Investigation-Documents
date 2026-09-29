@@ -27,9 +27,9 @@ export default function AdminPage() {
   const queryClient = useQueryClient();
   const triggerAlarmMutation = useMutation({
     mutationFn: () => alarmsApi.triggerTestAlarm({
-      alarmType: AlarmType.SECURITY_DRILL,
+      alarmType: 'SYSTEM_ALERT' as any,
       severity: AlarmSeverity.CRITICAL,
-      message: 'SIMULATED INCIDENT: Unauthorized access attempt detected on evidence vault container.'
+      message: 'SIMULATED INCIDENT: Unauthorized access attempt detected on evidence vault container.', resourceRef: 'SYSTEM:VAULT_CONTAINER'
     }),
     onSuccess: () => alert('Security drill alarm dispatched to STOMP topic.'),
     onError: (err: any) => alert(err.message || 'Failed to trigger alarm')
@@ -131,7 +131,7 @@ export default function AdminPage() {
       <details className="group mt-6">
         <summary className="text-xs font-mono font-semibold text-zinc-400 uppercase tracking-wider cursor-pointer hover:text-zinc-200 transition-colors inline-flex items-center gap-2">
           <span>View Security Posture & Cryptographic Specs</span>
-          <span className="group-open:rotate-180 transition-transform">â–¼</span>
+          <span className="group-open:rotate-180 transition-transform">▼</span>
         </summary>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 pt-4">
           <div className="border border-zinc-800 bg-zinc-950 rounded-xl p-6 flex items-start gap-4">

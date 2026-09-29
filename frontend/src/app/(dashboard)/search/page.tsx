@@ -34,7 +34,7 @@ const ENTITY_BADGE_CLASSES: Record<string, string> = {
 };
 
 function getEntityHref(item: SearchResultItem): string {
-  switch (item.entityType) {
+  switch (item.type) {
     case 'CASE':
       return `/cases/${item.id}`;
     case 'EVIDENCE':
@@ -192,13 +192,13 @@ export default function SearchPage() {
           {/* Results List */}
           <div className="space-y-2 stagger-children">
             {results.hits.map((item) => {
-              const Icon = ENTITY_ICONS[item.entityType] || FileSearch;
-              const color = ENTITY_COLORS[item.entityType] || 'text-zinc-400';
-              const badgeClass = ENTITY_BADGE_CLASSES[item.entityType] || 'bg-zinc-800 text-zinc-300 border-zinc-700';
+              const Icon = ENTITY_ICONS[item.type] || FileSearch;
+              const color = ENTITY_COLORS[item.type] || 'text-zinc-400';
+              const badgeClass = ENTITY_BADGE_CLASSES[item.type] || 'bg-zinc-800 text-zinc-300 border-zinc-700';
 
               return (
                 <button
-                  key={`${item.entityType}-${item.id}`}
+                  key={`${item.type}-${item.id}`}
                   onClick={() => router.push(getEntityHref(item))}
                   className="w-full text-left block p-4 rounded-xl border border-zinc-800 bg-zinc-950 hover:bg-zinc-800/20 hover:border-zinc-700 transition-colors group cursor-pointer"
                 >
@@ -213,7 +213,7 @@ export default function SearchPage() {
                           {item.title}
                         </h3>
                         <span className={clsx('text-[10px] font-mono px-1.5 py-0.5 rounded border shrink-0', badgeClass)}>
-                          {item.entityType}
+                          {item.type}
                         </span>
                       </div>
 

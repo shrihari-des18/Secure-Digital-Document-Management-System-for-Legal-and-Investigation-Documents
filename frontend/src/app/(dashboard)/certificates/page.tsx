@@ -122,10 +122,10 @@ export default function CertificatesHubPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-zinc-100">
-            BSA 2023 §63 Court Admissibility Certificates
+            BSA 2023 Section 63 Court Admissibility Certificates
           </h1>
           <p className="text-xs text-zinc-400 mt-1">
-            Statutory electronic record certificates required for court admissibility under Bharatiya Sakshya Adhiniyam, 2023 §63
+            Statutory electronic record certificates required for court admissibility under Bharatiya Sakshya Adhiniyam, 2023 Section 63
           </p>
         </div>
 
@@ -134,7 +134,7 @@ export default function CertificatesHubPage() {
           className="btn-primary shrink-0"
         >
           <Plus className="w-4 h-4" />
-          <span>Issue §63 Certificate</span>
+          <span>Issue Section 63 Certificate</span>
         </button>
       </div>
 
@@ -164,7 +164,7 @@ export default function CertificatesHubPage() {
           <div className="w-12 h-12 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-500 mx-auto mb-3">
             <Award className="w-6 h-6" />
           </div>
-          <h3 className="text-sm font-bold tracking-tight text-zinc-100">No §63 certificates issued yet</h3>
+          <h3 className="text-sm font-bold tracking-tight text-zinc-100">No Section 63 certificates issued yet</h3>
           <p className="text-xs text-zinc-400 mt-1 max-w-sm mx-auto">
             Generate and digitally sign court-admissible certificate PDFs for any ingested digital evidence item.
           </p>
@@ -190,7 +190,7 @@ export default function CertificatesHubPage() {
                   <div className="flex flex-wrap items-center gap-2 mb-2">
                     <span className="font-mono text-sm font-bold text-zinc-100">{cert.certificateNumber}</span>
                     <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase font-semibold">
-                      {cert.standard || 'BSA §63'}
+                      {cert.standard || 'BSA Section 63'}
                     </span>
                     {ev && (
                       <Link
@@ -255,7 +255,7 @@ export default function CertificatesHubPage() {
       <Modal
         isOpen={isIssueOpen}
         onClose={() => setIsIssueOpen(false)}
-        title="Issue Statutory BSA §63 Certificate"
+        title="Issue Statutory BSA Section 63 Certificate"
         subtitle="Generate signed certificate with device particulars and hash snapshot"
         maxWidth="lg"
       >

@@ -70,7 +70,7 @@ export default function CaseDetailPage() {
   const [docError, setDocError] = useState<string | null>(null);
 
   // Fetch case details
-  const { data: caseData, isLoading: caseLoading, error: caseError } = useQuery({
+  const { data: caseData, isPending: caseLoading, error: caseError } = useQuery({
     queryKey: ['case', caseId],
     queryFn: () => casesApi.getById(caseId),
     enabled: !!caseId,
@@ -166,7 +166,7 @@ export default function CaseDetailPage() {
         <AlertTriangle className="w-10 h-10 text-amber-400 mx-auto mb-3" />
         <h2 className="text-sm font-bold tracking-tight text-zinc-100">Case docket not found or access restricted</h2>
         <p className="text-xs text-zinc-400 mt-1">
-          The requested case ID does not exist or you lack clearance to inspect this docket.
+          The requested case ID does not exist or you lack clearance. Error: {caseError?.message || JSON.stringify(caseError)}
         </p>
         <Link
           href="/cases"
@@ -262,7 +262,7 @@ export default function CaseDetailPage() {
         <details className="group mt-6">
           <summary className="text-xs font-mono font-semibold text-zinc-400 uppercase tracking-wider cursor-pointer hover:text-zinc-200 transition-colors inline-flex items-center gap-2">
             <span>View Docket Metadata</span>
-            <span className="group-open:rotate-180 transition-transform">â–¼</span>
+            <span className="group-open:rotate-180 transition-transform">▼</span>
           </summary>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-4 text-xs">
             <div className="flex items-center gap-3 text-zinc-400">
@@ -660,7 +660,7 @@ export default function CaseDetailPage() {
               type="text"
               value={docTitle}
               onChange={(e) => setDocTitle(e.target.value)}
-              placeholder="e.g., First Information Report (FIR) under Â§66 ITA"
+              placeholder="e.g., First Information Report (FIR) under Section 66 ITA"
               required
               className="input-field"
             />

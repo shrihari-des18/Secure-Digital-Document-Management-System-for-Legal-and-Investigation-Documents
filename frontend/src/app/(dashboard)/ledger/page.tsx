@@ -27,7 +27,7 @@ export default function LedgerPage() {
   // Verify ledger mutation / query
   const {
     data: verification,
-    isLoading: verifying,
+    isFetching: verifying,
     refetch: triggerVerification,
   } = useQuery({
     queryKey: ['ledger-verification'],

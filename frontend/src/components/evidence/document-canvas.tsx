@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useRef, useState } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
@@ -127,12 +127,12 @@ export function DocumentCanvas({ evidenceId, fileName, onDownloadFallback }: Doc
     const text = `${user.fullName?.toUpperCase()} - ID: ${user.badgeNumber || user.id.substring(0, 8).toUpperCase()} - ${new Date().toISOString()}`;
     
     ctx.font = 'bold 24px monospace';
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.15)'; 
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.2)'; 
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     
-    const stepX = 400;
-    const stepY = 250;
+    const stepX = ctx.measureText(text).width + 150;
+    const stepY = 300;
     
     ctx.translate(width / 2, height / 2);
     ctx.rotate((-45 * Math.PI) / 180);
@@ -218,12 +218,12 @@ export function DocumentCanvas({ evidenceId, fileName, onDownloadFallback }: Doc
           />
           <canvas 
             ref={watermarkRef} 
-            className="absolute top-0 left-0 pointer-events-none opacity-80 mix-blend-screen"
+            className="absolute top-0 left-0 pointer-events-none opacity-80 mix-blend-multiply"
           />
         </div>
       </div>
       <div className="text-center text-[10px] text-zinc-600 font-mono">
-        Sandboxed UI • Digital Watermarking Active • No Copy/Paste
+        Sandboxed UI Â Digital Watermarking Active Â No Copy/Paste
       </div>
     </div>
   );

@@ -1,10 +1,10 @@
-﻿# E-Vault Frontend Setup & Architecture
+# E-Vault Frontend Setup & Architecture
 
 ## Overview
 The E-Vault frontend is the secure, client-side interface for digital evidence management. It is designed to allow law enforcement officers, investigators, and court personnel to manage cases, verify cryptographically sealed evidence, trace chains of custody, and issue statutory certificates. Rather than using mocked data, the frontend is directly wired to the real E-Vault Spring Boot backend API, ensuring all interactionsâ€”from appending to the ledger to uploading evidenceâ€”are persisted securely in the database.
 
 ## Tech Stack Summary
-- **Framework**: Next.js 16.3+ (App Router)
+- **Framework**: Next.js 16.3.5 (App Router)
 - **Styling**: Tailwind CSS v4
 - **State Management (Client)**: Zustand (used primarily for authentication state and RBAC)
 - **Data Fetching (Server State)**: TanStack Query (React Query) for caching and asynchronous requests to the Spring Boot API
@@ -49,12 +49,12 @@ Inside the `src/` directory, the code is structured as follows:
 - **Key Components**: Uses `<details>` wrappers for progressive disclosure of case metadata and **CourtBundleModal** for compiling case dockets.
 - **RBAC**: Lead Investigating Officers have write access; others have read-only access depending on assignment.
 
-### Digital Evidence Vault (`/evidence` & `/evidence/[id]`)
+### Digital Evidence Vault (/evidence & /evidence/[id])
 - **Purpose**: The core repository where an officer views sealed evidence files, verifies physical and digital integrity, and manages hardware specifics.
-- **Endpoints**: `evidenceApi.getByCaseId()`, `evidenceApi.getById()`, `evidenceApi.upload()`.
+- **Endpoints**: evidenceApi.getByCaseId(), evidenceApi.getById(), evidenceApi.upload().
 - **Key Components**: 
   - **Integrity Seal Card**: Visually indicates if the SHA-256 hash matches the server's record.
-  - **Evidence File Viewer**: Allows safe previews of digital files.
+  - **Sandboxed Document Canvas**: A secure, blob-based PDF viewer utilizing HTML5 Canvas and pdfjs-dist to prevent right-click and selection, featuring a dynamic diagonal watermark of the logged-in user's name, ID, and live timestamp.
 - **RBAC**: Uploads restricted to Forensic Analysts and Investigating Officers.
 
 ### Chain of Custody (`/custody`)
@@ -93,16 +93,30 @@ Inside the `src/` directory, the code is structured as follows:
 - **Key Components**: Specialized export cards triggering Blob downloads.
 - **RBAC**: Typically restricted to Administrators and high-level Prosecutors.
 
-### Admin Setup (`/admin`)
+### Admin Setup (/admin)
 - **Purpose**: Role-based access control directory where administrators onboard new system actors and review cryptographic security posture.
-- **Endpoints**: `usersApi.getAll()`, `usersApi.create()`.
+- **Endpoints**: usersApi.getAll(), usersApi.create().
 - **Key Components**: The **Security Specs Grid** detailing JWT, RBAC, and HMAC-SHA256 usage, alongside the user directory grid.
 - **RBAC**: Strictly limited to Administrators.
 
+### Hybrid Search (/search)
+- **Purpose**: Centralized full-text and semantic search engine indexing cases, evidence metadata, and legal documents.
+- **Endpoints**: searchApi.search().
+- **Key Components**: Interactive filter chips for ALL, CASE, EVIDENCE, and DOCUMENT types with paginated, high-density result cards.
+- **RBAC**: Accessible to all logged-in roles.
+
+### Security Alarms (/alarms)
+- **Purpose**: Real-time STOMP WebSocket subscriber page displaying critical integrity violations, unauthorized access attempts, and WORM storage alerts.
+- **Endpoints**: larmsApi.listAlarms(), larmsApi.acknowledgeAlarm().
+- **Key Components**: A live feed of categorized alerts (Critical, High, Medium, Info) with unacknowledged alarm filtering and notification badges.
+- **RBAC**: Restricted to System Admin and Auditor roles.
+
 ## Key Shared Components
-- **`Modal`**: A highly reusable wrapper for forms and previews (e.g., Transfer Evidence, Issue Certificate) utilizing a translucent backdrop and animated transitions.
-- **`ClassificationBadge` / `DocumentTypeBadge` / `CustodyStateBadge`**: Standardized, color-coded semantic pills used globally to represent status (e.g., TOP SECRET, FIR, IN_LAB).
-- **`HashVerifier` / `IntegrityCard`**: A standardized UI block that checks a file's client-side hash against the server-side ledger hash to prove non-repudiation.
+- **Modal**: A highly reusable wrapper for forms and previews (e.g., Transfer Evidence, Issue Certificate) utilizing a translucent backdrop and animated transitions.
+- **ClassificationBadge / DocumentTypeBadge / CustodyStateBadge**: Standardized, color-coded semantic pills used globally to represent status (e.g., TOP SECRET, FIR, IN_LAB).
+- **HashVerifier / IntegrityCard**: A standardized UI block that checks a file's client-side hash against the server-side ledger hash to prove non-repudiation.
+- **TrustedTimestampSection**: Renders an RFC 3161 cryptographically verifiable time-seal block with expandable JSON evidence, proving temporal non-repudiation.
+- **useStompSubscription (Hook)**: A React hook that initiates a persistent WebSocket/STOMP connection using sockjs-client and @stomp/stompjs to push live data (e.g., Alarms, Case Activity) to the UI.
 
 ## Client-Side Crypto
 The `lib/crypto.ts` file houses pure client-side cryptographic functions, most notably generating SHA-256 hashes using the browser's native `crypto.subtle` API. 
