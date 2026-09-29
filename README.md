@@ -20,28 +20,6 @@
 
 ## System Preview
 
-<details open>
-<summary><b>Click to View E-Vault Interface</b></summary>
-<br>
-
-<div align="center">
-  <img src="docs/assets/dashboard.png" width="800" alt="Dashboard View">
-  <br><em>Centralized Dashboard for Investigating Officers</em><br><br>
-
-  <img src="docs/assets/audit-ledger.png" width="800" alt="Audit Ledger">
-  <br><em>Cryptographic SHA-256 Hash-Chained Audit Ledger (Tamper Detection)</em><br><br>
-
-  <img src="docs/assets/evidence-viewer.png" width="800" alt="Secure Evidence Viewer">
-  <br><em>Secure Digital Evidence Viewer with Dynamic Diagonal Watermarking & RFC 3161 Verification</em><br><br>
-
-  <img src="docs/assets/ai-analysis.png" width="800" alt="AI Forensics">
-  <br><em>AI-Driven Forensics: Automated PII Redaction, OCR, and Classification Tags</em><br><br>
-
-  <img src="docs/assets/section63-cert.png" width="800" alt="Section 63 Certificates">
-  <br><em>Automated Issuance of Statutory BSA 2023 Section 63 Court Certificates</em><br><br>
-</div>
-</details>
-
 ---
 
 ## 1. Executive Summary & System Vision
