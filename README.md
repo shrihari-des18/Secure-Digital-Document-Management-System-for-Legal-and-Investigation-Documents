@@ -18,6 +18,32 @@
 
 ---
 
+## System Preview
+
+<details open>
+<summary><b>Click to View E-Vault Interface</b></summary>
+<br>
+
+<div align="center">
+  <img src="docs/assets/dashboard.png" width="800" alt="Dashboard View">
+  <br><em>Centralized Dashboard for Investigating Officers</em><br><br>
+
+  <img src="docs/assets/audit-ledger.png" width="800" alt="Audit Ledger">
+  <br><em>Cryptographic SHA-256 Hash-Chained Audit Ledger (Tamper Detection)</em><br><br>
+
+  <img src="docs/assets/evidence-viewer.png" width="800" alt="Secure Evidence Viewer">
+  <br><em>Secure Digital Evidence Viewer with Dynamic Diagonal Watermarking & RFC 3161 Verification</em><br><br>
+
+  <img src="docs/assets/ai-analysis.png" width="800" alt="AI Forensics">
+  <br><em>AI-Driven Forensics: Automated PII Redaction, OCR, and Classification Tags</em><br><br>
+
+  <img src="docs/assets/section63-cert.png" width="800" alt="Section 63 Certificates">
+  <br><em>Automated Issuance of Statutory BSA 2023 Section 63 Court Certificates</em><br><br>
+</div>
+</details>
+
+---
+
 ## 1. Executive Summary & System Vision
 
 The **Secure Digital Evidence and Legal Document Management System (E-Vault)** is an enterprise-grade, zero-trust platform engineered to secure the acquisition, storage, analysis, chain of custody, and legal certification of digital evidence and case files for Indian law enforcement agencies, forensic laboratories, prosecutors, and judicial courts.
@@ -47,6 +73,32 @@ Effective **July 1, 2024**, the Indian Parliament enacted the **Bharatiya Sakshy
   5. Official digital or physical signature of the certifying officer.
 
 The E-Vault provides an **automated, cryptographically signed implementation of Section 63 BSA**, auto-generating Schedule-compliant court certificates while maintaining an append-only hash-chained audit ledger.
+
+---
+
+## System Preview
+
+<details open>
+<summary><b>Click to View E-Vault Interface</b></summary>
+<br>
+
+<div align="center">
+  <img src="docs/assets/dashboard.png" width="800" alt="Dashboard View">
+  <br><em>Centralized Dashboard for Investigating Officers</em><br><br>
+
+  <img src="docs/assets/audit-ledger.png" width="800" alt="Audit Ledger">
+  <br><em>Cryptographic SHA-256 Hash-Chained Audit Ledger (Tamper Detection)</em><br><br>
+
+  <img src="docs/assets/evidence-viewer.png" width="800" alt="Secure Evidence Viewer">
+  <br><em>Secure Digital Evidence Viewer with Dynamic Diagonal Watermarking & RFC 3161 Verification</em><br><br>
+
+  <img src="docs/assets/ai-analysis.png" width="800" alt="AI Forensics">
+  <br><em>AI-Driven Forensics: Automated PII Redaction, OCR, and Classification Tags</em><br><br>
+
+  <img src="docs/assets/section63-cert.png" width="800" alt="Section 63 Certificates">
+  <br><em>Automated Issuance of Statutory BSA 2023 Section 63 Court Certificates</em><br><br>
+</div>
+</details>
 
 ---
 
@@ -475,7 +527,7 @@ cd frontend
 npm install
 npm run dev
 ```
-- Web App UI: `http://localhost:3000`
+- Web App UI: `https://e-vault-secure.vercel.app/`
 
 ---
 
