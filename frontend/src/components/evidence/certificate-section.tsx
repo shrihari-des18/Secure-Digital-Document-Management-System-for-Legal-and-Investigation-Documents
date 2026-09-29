@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { Award, Download, Plus, Clock } from 'lucide-react';
@@ -6,6 +6,7 @@ import { clsx } from 'clsx';
 import { certificatesApi } from '@/lib/api/certificates';
 import { formatDate } from '@/lib/crypto';
 import { Modal } from '@/components/ui/modal';
+import { TrustedTimestampSection } from '@/components/evidence/trusted-timestamp-section';
 import type { CertificateResponse, IssueCertificateRequest } from '@/types';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -72,7 +73,7 @@ export function CertificateSection({ evidenceId }: CertificateSectionProps) {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-base font-bold text-zinc-100 tracking-tight">Statutory BSA 2023 §63 Court Certificates</h3>
+              <h3 className="text-base font-bold text-zinc-100 tracking-tight">Statutory BSA 2023 Section 63 Court Certificates</h3>
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">
                 INDIAN EVIDENCE ACT REPLACEMENT
               </span>
@@ -88,7 +89,7 @@ export function CertificateSection({ evidenceId }: CertificateSectionProps) {
           className="btn-primary text-xs shrink-0"
         >
           <Plus className="w-3.5 h-3.5" />
-          Issue §63 Certificate
+          Issue Section 63 Certificate
         </button>
       </div>
 
@@ -116,7 +117,7 @@ export function CertificateSection({ evidenceId }: CertificateSectionProps) {
                     <div className="flex items-center gap-2 mb-1">
                       <span className="font-mono text-sm font-bold text-zinc-100">{cert.certificateNumber}</span>
                       <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 uppercase font-semibold">
-                        {cert.standard || 'BSA §63 (2023)'}
+                        {cert.standard || 'BSA Section 63 (2023)'}
                       </span>
                     </div>
                     <div className="flex flex-wrap items-center gap-4 text-xs text-zinc-400">
@@ -155,6 +156,9 @@ export function CertificateSection({ evidenceId }: CertificateSectionProps) {
                     <p className="text-zinc-200 mt-0.5">{cert.mannerOfProduction || 'Standard Ingest Bit-stream copy'}</p>
                   </div>
                 </div>
+
+                {/* RFC 3161 Timestamp for Certificate */}
+                <TrustedTimestampSection resourceType="certificate" resourceId={cert.id} />
               </div>
             ))}
           </div>
@@ -165,8 +169,8 @@ export function CertificateSection({ evidenceId }: CertificateSectionProps) {
       <Modal
         isOpen={isIssueOpen}
         onClose={() => setIsIssueOpen(false)}
-        title="Issue Statutory BSA §63 Court Certificate"
-        subtitle="Generate and digitally sign court-admissible certificate under Bharatiya Sakshya Adhiniyam, 2023 §63"
+        title="Issue Statutory BSA Section 63 Court Certificate"
+        subtitle="Generate and digitally sign court-admissible certificate under Bharatiya Sakshya Adhiniyam, 2023 Section 63"
         maxWidth="xl"
       >
         <form onSubmit={handleIssueSubmit} className="space-y-4">
@@ -224,4 +228,5 @@ export function CertificateSection({ evidenceId }: CertificateSectionProps) {
     </div>
   );
 }
+
 

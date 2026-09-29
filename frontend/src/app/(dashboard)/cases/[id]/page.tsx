@@ -17,6 +17,7 @@ import {
   Upload,
   Scale,
   Settings,
+  ShieldAlert,
 } from 'lucide-react';
 import { casesApi } from '@/lib/api/cases';
 import { evidenceApi } from '@/lib/api/evidence';
@@ -32,6 +33,9 @@ import {
 import { Tabs } from '@/components/ui/tabs';
 import { Modal } from '@/components/ui/modal';
 import { CourtBundleModal } from '@/components/cases/court-bundle-modal';
+import { SecurityActivityTab } from '@/components/cases/security-activity-tab';
+import { useAuthStore } from '@/stores/auth-store';
+import { RoleEnum } from '@/types';
 import type {
   CreateLegalDocumentRequest,
 } from '@/types';
@@ -42,8 +46,9 @@ export default function CaseDetailPage() {
   const params = useParams();
   const caseId = params?.id as string;
   const queryClient = useQueryClient();
+  const user = useAuthStore((s) => s.user);
 
-  const [activeTab, setActiveTab] = useState<'evidence' | 'documents' | 'team'>('evidence');
+  const [activeTab, setActiveTab] = useState<string>('evidence');
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [newStatus, setNewStatus] = useState<CaseStatus>(CaseStatus.UNDER_INVESTIGATION);
   const [statusReason, setStatusReason] = useState('');
@@ -65,7 +70,7 @@ export default function CaseDetailPage() {
   const [docError, setDocError] = useState<string | null>(null);
 
   // Fetch case details
-  const { data: caseData, isLoading: caseLoading, error: caseError } = useQuery({
+  const { data: caseData, isPending: caseLoading, error: caseError } = useQuery({
     queryKey: ['case', caseId],
     queryFn: () => casesApi.getById(caseId),
     enabled: !!caseId,
@@ -161,7 +166,7 @@ export default function CaseDetailPage() {
         <AlertTriangle className="w-10 h-10 text-amber-400 mx-auto mb-3" />
         <h2 className="text-sm font-bold tracking-tight text-zinc-100">Case docket not found or access restricted</h2>
         <p className="text-xs text-zinc-400 mt-1">
-          The requested case ID does not exist or you lack clearance to inspect this docket.
+          The requested case ID does not exist or you lack clearance. Error: {caseError?.message || JSON.stringify(caseError)}
         </p>
         <Link
           href="/cases"
@@ -174,10 +179,12 @@ export default function CaseDetailPage() {
     );
   }
 
+  const canViewActivity = user?.role === RoleEnum.SYSTEM_ADMIN || user?.role === RoleEnum.AUDITOR || user?.role === RoleEnum.INVESTIGATING_OFFICER;
   const tabs = [
     { id: 'evidence', label: 'Digital Evidence Items', icon: FileSearch, count: evidenceList.length },
     { id: 'documents', label: 'Legal Documents & Filings', icon: FileText, count: documentList.length },
     { id: 'team', label: 'Assigned Team & Officers', icon: Users, count: caseData.assignedOfficerIds?.length || 1 },
+    ...(canViewActivity ? [{ id: 'activity', label: 'Security Activity', icon: ShieldAlert }] : []),
   ];
 
   const leadUser = allUsers.find((u) => u.id === caseData.leadOfficerId);
@@ -469,7 +476,7 @@ export default function CaseDetailPage() {
                         )}
                       </div>
                       <p className="text-[11px] text-zinc-500 font-mono">
-                        {u ? `${u.department || 'Police Department'} • Badge: ${u.badgeNumber || 'N/A'}` : officerId}
+                        {u ? `${u.department || 'Police Department'} â€¢ Badge: ${u.badgeNumber || 'N/A'}` : officerId}
                       </p>
                     </div>
                   </div>
@@ -477,6 +484,13 @@ export default function CaseDetailPage() {
               );
             })}
           </div>
+        </div>
+      )}
+
+      {/* Tab 4: Security Activity */}
+      {activeTab === 'activity' && canViewActivity && (
+        <div className="border border-zinc-800 bg-zinc-950 rounded-xl p-6">
+          <SecurityActivityTab caseId={caseId} />
         </div>
       )}
 
@@ -646,7 +660,7 @@ export default function CaseDetailPage() {
               type="text"
               value={docTitle}
               onChange={(e) => setDocTitle(e.target.value)}
-              placeholder="e.g., First Information Report (FIR) under §66 ITA"
+              placeholder="e.g., First Information Report (FIR) under Section 66 ITA"
               required
               className="input-field"
             />
@@ -722,3 +736,4 @@ export default function CaseDetailPage() {
     </div>
   );
 }
+

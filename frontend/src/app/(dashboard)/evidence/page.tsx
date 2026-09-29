@@ -93,7 +93,7 @@ export default function EvidenceVaultPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by evidence ID, title, device make/model..."
-              className="input-field pl-9"
+              className="input-field !pl-10"
             />
           </div>
 

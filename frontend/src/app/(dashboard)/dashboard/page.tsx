@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useCallback } from 'react';
 import Link from 'next/link';
 import {
   Briefcase,
@@ -8,20 +9,25 @@ import {
   Plus,
   ArrowRight,
   Award,
+  ShieldAlert,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useAuthStore, ROLE_LABELS } from '@/stores/auth-store';
 import { casesApi } from '@/lib/api/cases';
 import { evidenceApi } from '@/lib/api/evidence';
 import { ledgerApi } from '@/lib/api/ledger';
+import { alarmsApi } from '@/lib/api/alarms';
+import { useStompSubscription } from '@/lib/ws/use-stomp-subscription';
 import { formatDate, truncateHash } from '@/lib/crypto';
 import { CaseStatusBadge, CustodyStateBadge, ClassificationBadge } from '@/components/ui/badge';
-import type { EvidenceDetailResponse } from '@/types';
-import { CaseStatus, CustodyState } from '@/types';
-import { useQuery } from '@tanstack/react-query';
+import type { EvidenceDetailResponse, SecurityAlarm } from '@/types';
+import { CaseStatus, CustodyState, RoleEnum } from '@/types';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user);
+  const queryClient = useQueryClient();
+  const isSecurityRole = user?.role === RoleEnum.SYSTEM_ADMIN || user?.role === RoleEnum.AUDITOR;
 
   // Fetch live cases
   const { data: cases = [], isLoading: casesLoading } = useQuery({
@@ -48,6 +54,21 @@ export default function DashboardPage() {
     queryKey: ['ledger-verification'],
     queryFn: () => ledgerApi.verify(),
   });
+
+  // Fetch recent alarms (security roles only)
+  const { data: recentAlarms = [] } = useQuery({
+    queryKey: ['dashboard-alarms'],
+    queryFn: () => alarmsApi.listAlarms({ unacknowledgedOnly: true }),
+    enabled: isSecurityRole,
+    refetchInterval: 30000,
+  });
+
+  // Live STOMP subscription for security alarms
+  const handleAlarmPush = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['dashboard-alarms'] });
+  }, [queryClient]);
+
+  useStompSubscription('/topic/security/alarms', handleAlarmPush, isSecurityRole);
 
   const activeInvestigations = cases.filter(
     (c) => c.status === CaseStatus.UNDER_INVESTIGATION || c.status === CaseStatus.OPEN
@@ -98,6 +119,14 @@ export default function DashboardPage() {
     },
   ];
 
+  const SEVERITY_BADGE: Record<string, string> = {
+    CRITICAL: 'bg-red-500/10 text-red-400 border-red-500/20',
+    HIGH: 'bg-red-500/10 text-red-400 border-red-500/20',
+    MEDIUM: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+    LOW: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+    INFO: 'bg-zinc-800 text-zinc-300 border-zinc-700',
+  };
+
   return (
     <div className="space-y-10">
       {/* Welcome Banner */}
@@ -117,7 +146,7 @@ export default function DashboardPage() {
               Welcome back, {user?.fullName || 'Officer'}
             </h1>
             <p className="text-xs text-zinc-400 mt-1 max-w-xl leading-relaxed">
-              Secure Digital Evidence & Legal Document Management System under Bharatiya Sakshya Adhiniyam, 2023 §63
+              Secure Digital Evidence &amp; Legal Document Management System under Bharatiya Sakshya Adhiniyam, 2023 §63
             </p>
           </div>
 
@@ -168,6 +197,59 @@ export default function DashboardPage() {
           );
         })}
       </div>
+
+      {/* Security Alerts Feed — SYSTEM_ADMIN / AUDITOR only */}
+      {isSecurityRole && recentAlarms.length > 0 && (
+        <details className="group border border-red-500/20 bg-zinc-950 rounded-xl overflow-hidden" open>
+          <summary className="p-6 flex items-center justify-between cursor-pointer hover:bg-zinc-900/50 transition-colors">
+            <h2 className="text-sm font-bold tracking-tight text-zinc-100 flex items-center gap-2">
+              <div className="w-7 h-7 rounded-md bg-red-500/10 text-red-400 flex items-center justify-center border border-red-500/20">
+                <ShieldAlert className="w-3.5 h-3.5" />
+              </div>
+              <span>Live Security Alerts</span>
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 border border-red-500/20 font-bold">
+                {recentAlarms.length} UNACK
+              </span>
+            </h2>
+            <Link
+              href="/alarms"
+              className="text-xs font-semibold text-zinc-300 hover:text-zinc-100 hover:underline flex items-center gap-1 font-mono"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <span>View all</span>
+              <ArrowRight className="w-3 h-3" />
+            </Link>
+          </summary>
+
+          <div className="px-6 pb-6 space-y-2">
+            {recentAlarms.slice(0, 4).map((alarm: SecurityAlarm) => {
+              const badgeClass = SEVERITY_BADGE[alarm.severity] || SEVERITY_BADGE.INFO;
+              return (
+                <div
+                  key={alarm.id}
+                  className="p-3.5 rounded-lg border border-zinc-800/80 bg-zinc-900/40 flex items-start gap-3"
+                >
+                  <ShieldAlert className={clsx('w-4 h-4 shrink-0 mt-0.5',
+                    alarm.severity === 'CRITICAL' || alarm.severity === 'HIGH' ? 'text-red-400' :
+                    alarm.severity === 'MEDIUM' ? 'text-amber-400' : 'text-zinc-400'
+                  )} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={clsx('text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border', badgeClass)}>
+                        {alarm.severity}
+                      </span>
+                      <span className="text-[10px] font-mono text-zinc-500">
+                        {alarm.alarmType?.toString().replace(/_/g, ' ')}
+                      </span>
+                    </div>
+                    <p className="text-xs text-zinc-300 line-clamp-1">{alarm.message}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </details>
+      )}
 
       {/* Main Grid: Recent Cases & Recent Evidence */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -272,7 +354,7 @@ export default function DashboardPage() {
             <span className="w-7 h-7 rounded-md bg-zinc-100 text-zinc-950 flex items-center justify-center">
               <Plus className="w-3.5 h-3.5" />
             </span>
-            Statutory & Operational Workbenches
+            Statutory &amp; Operational Workbenches
           </h2>
           <span className="text-xs font-semibold text-zinc-400 group-open:text-zinc-100 transition-colors">
             Toggle View

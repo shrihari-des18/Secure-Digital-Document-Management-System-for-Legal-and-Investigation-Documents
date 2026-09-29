@@ -1,4 +1,4 @@
-import { apiClient } from '@/lib/api-client';
+﻿import { apiClient } from '@/lib/api-client';
 import type {
   EvidenceDetailResponse,
   IntegrityVerificationResponse,
@@ -34,7 +34,13 @@ export const evidenceApi = {
   getByCaseId(caseId: string): Promise<EvidenceDetailResponse[]> {
     return apiClient.get<EvidenceDetailResponse[]>(`/evidence/case/${caseId}`);
   },
-
+  /**
+   * GET /api/v1/evidence/{id}/download
+   * Download the sealed evidence binary file as a Blob.
+   */
+  getBlob(id: string): Promise<Blob> {
+    return apiClient.getBlob(`/evidence/${id}/download`);
+  },
   /**
    * GET /api/v1/evidence/{id}/download
    * Download the sealed evidence binary file.
@@ -51,3 +57,6 @@ export const evidenceApi = {
     return apiClient.post<IntegrityVerificationResponse>(`/evidence/${id}/verify-integrity`);
   },
 };
+
+
+
