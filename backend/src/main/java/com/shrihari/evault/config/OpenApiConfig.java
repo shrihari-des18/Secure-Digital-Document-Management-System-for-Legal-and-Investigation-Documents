@@ -32,7 +32,7 @@ public class OpenApiConfig {
                                 .name("Proprietary / SIH 2024")
                                 .url("https://sih.gov.in")))
                 .servers(List.of(
-                        new Server().url("http://localhost:8080").description("Local Development Server")
+                        new Server().url("http://localhost:8943").description("Local Development Server")
                 ))
                 .addSecurityItem(new SecurityRequirement().addList(SECURITY_SCHEME_NAME))
                 .components(new Components()
